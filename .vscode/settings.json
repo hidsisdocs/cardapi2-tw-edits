@@ -1,0 +1,65 @@
+{
+  "json.schemas": [
+    {
+      "url": "https://cdn.jsdelivr.net/npm/tsup/schema.json",
+      "fileMatch": [
+        "package.json",
+        "tsup.config.json"
+      ]
+    }
+  ],
+  "vsicons.presets.angular": true,
+  "files.associations": {
+    "*.json": "jsonc"
+  },
+  "markdown-preview-enhanced.imageFolderPath": "/docs/assets",
+  "markdown-toc.updateOnSave": true,
+  "plantuml.exportFormat": "svg",
+  "plantuml.exportOutDir": ".",
+  "triggerTaskOnSave.tasks": {
+    "generatePlantumlPng": [
+      "**/*.wsd",
+      "**/*.pu",
+      "**/*.puml",
+      "**/*.plantuml",
+      "**/*.iuml",
+    ]
+  },
+  "hidefiles.globalConfig": {
+    "profiles": [
+      {
+        "name": "Default",
+        "detail": "Hides huge, annoying folders",
+        "hidden": [
+          "node_modules/",
+          "bin/",
+          "obj/"
+        ]
+      },
+      {
+        "name": "Strict",
+        "detail": "Hide everything not immediately required",
+        "hidden": [
+          "$Default",
+          ".*/",
+          ".*",
+          "*.lock",
+          "~*/",
+          "~*",
+          "dist/",
+          "coverage/",
+          "@types/",
+          "*.config",
+          "package.*",
+          "karma.*",
+          "jasmine*",
+          "rollup.*",
+          "tsconfig.*",
+          "tslint*.*",
+          "yarn*",
+          "hide-files.json"
+        ]
+      }
+    ]
+  },
+}

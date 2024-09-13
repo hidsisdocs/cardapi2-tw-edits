@@ -1,0 +1,87 @@
+{
+  "name": "@digitalpersona/card",
+  "version": "0.1.1",
+  "description": "DigitalPersona Card API Library",
+  "author": "HID Global",
+  "maintainers": [
+    {
+      "name": "Andrey Bronnikov",
+      "email": "Andrey.Bronnikov@hidglobal.com"
+    }
+  ],
+  "keywords": [
+    "DigitalPersona",
+    "Card"
+  ],
+  "type": "module",
+  "module": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "browserslist": [
+    "defaults and fully supports es6-module",
+    "edge >= 18",
+    "chrome >= 70"
+  ],
+  "dependencies": {
+    "tslib": "^2.7.0"
+  },
+  "peerDependencies": {
+    "@digitalpersona/core": "^0.2.6"
+  },
+  "peerDependenciesMeta": {
+    "@digitalpersona/core": {
+      "optional": true
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": ""
+  },
+  "publishConfig": {
+    "access": "public"
+  },
+  "volta": {
+    "node": "20.17.0"
+  },
+  "scripts": {
+    "clean": "rimraf ./dist",
+    "clean-dev": "rimraf ./dist/es5*",
+    "esbuild": "node esbuild.mjs",
+    "build": "microbundle --compress false --globals @digitalpersona/core=dp.core,WebSdk=WebSdk",
+    "-build": "npm run clean && npm run tsc-all && npm run rollup && npm run deploy && npm run api && npm run api-doc",
+    "build-dev": "npm run clean-dev && npm run tsc-es6 && npm run rollup-es6 && npm run rollup-es6-min",
+    "tsup": "tsup",
+    "tsc": "tsc",
+    "tsc-es6": "tsc --p ./build/tsconfig/tsconfig.es6.json",
+    "tsc-es8": "tsc --p ./build/tsconfig/tsconfig.es8.json",
+    "tsc-all": "npm run tsc && npm run tsc-es5 && npm run tsc-es6 && npm run tsc-es8",
+    "rollup-es5": "rollup -c rollup.config.js --environment target:es5",
+    "rollup-es6": "rollup -c rollup.config.js --environment target:es6",
+    "rollup-es8": "rollup -c rollup.config.js --environment target:es8",
+    "rollup": "npm run rollup-es5 && npm run rollup-es6 && npm run rollup-es8",
+    "test": "karma start",
+    "test-once": "karma start --single-run",
+    "test-private": "set UUT=private&& karma start",
+    "test-common": "set UUT=common&& karma start",
+    "local-npm": "start verdaccio",
+    "api": "npx api-extractor run --local --verbose",
+    "api-doc": "npx api-documenter markdown -i ./dist/api -o ./dist/api/docs",
+    "api-all": "tsc && npm run api && npm run api-doc",
+    "prepublishOnly": "npm run build && npm run test-once"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "@types/eslint__js": "^8.42.3",
+    "@types/node": "^22.5.2",
+    "esbuild": "^0.23.1",
+    "eslint": "^9.9.1",
+    "eslint-plugin-compat": "^6.0.0",
+    "microbundle": "^0.15.1",
+    "mkdirp": "^3.0.1",
+    "rimraf": "^6.0.1",
+    "rollup": "^4.21.2",
+    "tsup": "^8.2.4",
+    "typescript": "^5.5.4",
+    "typescript-eslint": "^8.4.0"
+  }
+}

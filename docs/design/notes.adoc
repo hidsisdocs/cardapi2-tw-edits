@@ -1,0 +1,618 @@
+= Design notes
+
+This document describes a preliminary design of the Card Web API v2.0.
+
+toc::[]
+
+== Design principles
+
+=== Goals
+
+. Provide a simpler streamlined API for capturing contactless card data to be used for authentication and enrollment.
+. Use newer Native Card SDK "async" flow
+. Use power of a modern JavaScript language and Web APIs to make the Card API as idiomatic as possible.
+. Fallback to older Native Card SDK for older versions (?)
+
+=== Non-goals
+
+. Do not provide event-based API, we have it in the old API
+. Do not provide support for PKI cards
+. Do not provide shims for older browsers, users must add their own shims if needed.
+. Do not provide minified version of the library, users should use bundlers allowing for dead-code removal and optimized global minification
+. Do not provide ES5 version of the library, all target browsers support at least ES2017 (ES8)
+
+=== Supported browsers
+
+. All evergreen Chrome-based browsers (Chrome, Edge, Brave, Opera etc)
+. Evergreen Mozilla Firefox
+. MS Edge Legacy -- due to Windows/Office authentication dialogs using EdgeHTML WebView (Edge 18).
+
+=== Unsupported browsers
+
+. Internet Explorer (IE)
+. Safari
+. Opera Mini
+
+Known issues with Edge Legacy::
+
+. no support for `BigInt`` -- must use polyfills (`big-integer` or `jsbi``)
+. No support for `TextEncoder`/`TextDecoder` -- needs a polyfill
+. no support for `globalThis`
+
+=== Development
+
+The library should be developed using Typescript as a main language.
+
+=== Packaging
+
+The library should be:
+
+. transpiled to JavaScript supporting `ES2016`,
+. bundled into a an ESM module and
+. published to NPM.
+
+. No minification needed; the minification should be provided by the consumer as
+a part of their bundling process.
+. No `ES5` bundle needed; if target browser does not support `<script type="module">`,
+ the library consumer must do their own transpilation and bundling.
+. No CommonJS, UMD, AMD or IIFE bundling is needed.
+. No shims need to be bundled in; the library consumer should provide their
+  own shims for their target browsers.
+
+
+== Design
+
+The API design is largely motivated by the standard
+https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API[Fetch API], which
+provides a very simple interface to retrieve data using a Promise-like type,
+and allows request cancellation via a standard
+https://developer.mozilla.org/en-US/docs/Web/API/AbortController[`AbortController`]
+class (functionally similar to `CancellationTokenSource` in C#).
+
+'''''''''''''''''''''
+[[capture, capture()]]
+=== The `capture()` function
+
+The `capture()` function starts a card data capture process, returning a promise
+that is fulfilled once the user presents a card of an eligible type, and the
+card data is successfully read.
+
+Definition::
+====
+[source,typescript]
+----
+function capture(
+    purpose: Purpose,
+    options?: CaptureOptions
+): Promise<CaptureResult>
+----
+====
+
+Parameters::
+====
+purpose:: a <<Purpose>> value, showing what the retrieved card data will be used for.
+This value affects what data will be retruned in the <<CaptureResult>>'s `Data` property.
+
+options:: an optional <<CaptureOptions>> object containing optional settings that
+you want to apply to the capture process, such as a desired <<CardType, card type>>,
+a user <<FeedbackHandler,feedback>> callback function, an inactivity timeout,
+an https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal[`AbortSignal`]
+for operation cancellation, or additional communication channel options.
+====
+
+Return value::
+
+A promise which either resolves to <<CaptureResult>> object or is rejected with <<ApiError>> object.
+
+When the promise is resolved to the <<CaptureResult>> object, its <<CardType, Type>>
+property indicates the type of the card presented, and the <<Data>> property
+contains a string which can be passed to the authentication server directly, as
+an opaque blob. The string is base64url-encoded JSON object containing either
+<<EnrollmentData>> or <<AuthenticationData>>, depending on the `purpose` value
+
+In case of abort using an `AbortController.abort()` call, the promise is rejected
+with <<ApiError>> whose `message` property is set to <<ErrorMessage, `Aborted`>> value.
+
+=== Data types
+
+This chapter describes Card API data types used or returned by the <<capture()>> funciton.
+
+'''''''''''''''''''
+[[Purpose, Purpose]]
+==== `Purpose`
+
+The `Purpose` value MUST be passed to the <<capture()>> function as a first parameter.
+The value defines what scenario the captured card data is about to be used and what
+data will be returned in the <<CaptureResult>>'s `Data` property.
+
+Definition::
+====
+[source,typescript]
+----
+type Purpose = "enroll" | "auth"
+----
+====
+
+The requested purpose affects what data will be returned in the `<<CaptureResult>>.Data` as a base64url-encoded string.
+
+Values::
+====
+"enroll":: Card data will be used for enrollment. The `<<CaptureResult>>.Data` will contain base64url-encoded <<EnrollmentData>>.
+
+"auth":: Card data will be used for authentication. The `<<CaptureResult>>.Data` will contain base64url-encoded <<AuthenticationData>>.
+====
+
+''''''''''''''''''''''''''''''''''
+[[CaptureOptions, CaptureOptions]]
+==== `CaptureOptions`
+
+The `CaptureOptions` object can be passed to the <<capture()>> function as an optional second parameter `options`.
+
+Definition::
+====
+[source,typescript]
+----
+interface CaptureOptions {
+    readonly cardType?: CardType
+    readonly inactivityTimeout?: number
+    readonly signal?: AbortSignal
+    readonly onFeedback?: FeedbackHandler
+    readonly channelOptions?: WebSdk.WebChannelOptions
+}
+----
+====
+
+Properties::
+====
+cardType::
+    An optional <<CardType>> value, defining which cart types should be accepted.
+    If not provided or empty, any card type will be accepted.
+
+inactivityTimeout::
+    An optional `number` of seconds for an allowed inactivity period when no activity
+    (events or feedbacks) are received from the card engine.
+    Default value is infinite.
+    If inactivity period is expires, the capture process will be aborted with
+    the `<<ErrorMessage, Timeout>>` <<ApiError>>
+
+signal::
+    An optional `AbortSignal` provided by the `AbortController`.
+    The `AbortController.abort()` funciton can be user to cancel the capture operation.
+
+onFeedback::
+    An optional callback function with the <<FeedbackHandler>> signature.
+    This function will be called when the capture process is active and needs to
+    guide the card user through the process or show feedback.
+
+channelOptions::
+    An optional `WebChannelOptions` object from `WebSdk` library. See WebSdk documentation.
+====
+
+''''''''''''''''''''''
+[[CardType, CardType]]
+==== `CardType`
+
+The `CardType` value can be provided to the <<capture()>> function via its `options` parameter, to restring which type of cards should be accepted.
+
+Definition::
+====
+[source,typescript]
+----
+type CardType = "CID" | "CW"
+----
+====
+
+Values:
+====
+[horizontal]
+"CID":: Accept Contactless ID cards
+"CW":: Accept Contactless Writable cards
+====
+
+If no value or null/empty value is passed into the `<<CaptureOptions>>.cardType`,
+any card type will be accepted.
+
+When a card is accepted, the type of the card used will be returned in the
+<<CaptureResult>>.cardType` property. No value or null/empty value mean the
+card type is unknown.
+
+''''''''''''''''''''''''''''''''''''
+[[FeedbackHandler, FeedbackHandler]]
+==== `FeedbackHandler`
+
+A function with the `FeedbackHandler` signature can be passed an optional feedback
+via the `<<CaptureOptions>>.feedbackHandler` property.
+
+Definition::
+====
+[source,typescript]
+----
+type FeedbackHandler = (feedback: Feedback) => void;
+----
+====
+
+Parameters::
+====
+feedback::
+    A <<Feedback>> object.
+====
+
+IMPORTANT: A synchronous feedback handler can throw safely,
+    but it should not block the code for too long.
+    +
+    If the feedback handler is an async function, it must handle all its
+    exceptions to avoid uncaught async exceptions.
+
+
+''''''''''''''''''''''''''''''''
+[[CaptureResult, CaptureResult]]
+==== `CaptureResult`
+
+The <<capture()>> function returns a `CaptureResult` object (wrapped in a promise).
+
+Definition::
+====
+[source,typescript]
+----
+interface CaptureResult {
+    readonly cardType: CardType
+    readonly cardData: Base64UrlString       // AuthenticationData or EnrollmentData, base64url-encoded
+}
+----
+====
+
+Properties:
+====
+cardType::
+    A <<CardType>> value indication a type of the card presented by the user.
+
+cardData::
+    A base64url-encoded <<EnrollmentData>> or <<AuthenticationData>>,
+    depending on the <<Purpose>> value passed into the <<capture()>> function.
+    The content and format of the card data can be considered opaque and be passed
+    to the server "as-is" without decoding (same as for `getCardAuthData()`
+    and `getCardEnrollData()` methods in Card API 1.0).
+====
+
+''''''''''''''''''''''''''''''''''
+[[EnrollmentData, EnrollmentData]]
+==== `EnrollmentData`
+
+The `EnrollmentData` is an object returned as the base64url-encoded string in
+the `<<CaptureResult>>.Data` property when the `<<Purpose, "enroll">>` value was
+passed to the <<capture()>> function.
+
+Definition::
+====
+[source,typescript]
+----
+interface EnrollmentData
+{
+    readonly UID?: string        // Base64Url-encoded card CUID for Contactless ID (read only).
+    readonly tech?: string       // Card technology
+    readonly address?: string    // Address of a DP record on iClass Legacy or MiFare Classic cards, or other necessary card information
+    readonly key?: string        // Base64url-encoded AES256 key for Contactless Writable.
+    nickname?: string   // Card nickname;
+}
+----
+====
+
+Properties::
+====
+UID:: A readonly `string` value containing a base64Url-encoded card CUID for
+    Contactless ID (read only) card.
+
+tech:: A readonly `string` value containing a card technology.
+
+address:: A readonly `string` value containing an address of a DP record on
+    iClass Legacy or MiFare Classic cards; or other necessary card information.
+
+key:: A readonly `string` value containing a base64url-encoded AES256 key for
+    Contactless Writable.
+
+nickname:: A `string` value containing a card "nickname"; the property contains
+    a card technology (same as `tech`), but it may be modified by a user before
+    sending to the server (this requires base64url deconding/encoding).
+====
+
+Example:
+====
+[source,json]
+----
+{
+  "UID": "BCxWcjoUkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA",
+  "tech": "DESFire EV",
+  "address":0,
+  "key": "XVdVVUUzVVV1VVVVgwU0fww8bDOXGpF77cbXCh-nSbtEwO8aHO-wojoGcIg",
+  "nickname":"DESFire EV"
+ }
+----
+====
+
+
+''''''''''''''''''''''''''''''''''''''''''
+[[AuthenticationData, AuthenticationData]]
+==== `AuthenticationData`
+
+The `AuthenticationData` is an object returned as the base64url-encoded string
+in the `<<CaptureResult>>.Data` property when the `<<Purpose, "auth">>` value was
+passed to the <<capture()>> function.
+
+Definition::
+====
+[source,typescript]
+----
+interface AuthenticationData {
+    readonly UID?: string
+    readonly OTP?: string
+}
+----
+====
+
+Properties::
+====
+UID:: A readonly `string` value containing a base64url-encoded card CUID for Contactless ID (read only).
+OTP:: A readonly `string` value containing an OTP value for the authentication.
+====
+
+Example:
+====
+[source,json]
+----
+{
+  "OTP": "837167",
+  "UID": "BCxWcjoUkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+}
+----
+====
+
+
+
+''''''''''''''''''''''
+[[Feedback, Feedback]]
+==== `Feedback`
+
+`Feedback` values are passed into a <<FeedbackHandler>> callback function
+during the capture process. Feedback values should be used to update UI
+and prompt the user to do certain actions (e.g. place a card when ready) or
+notifying about a transient states (starting, paused) when no actions are accepted.
+
+Definition::
+====
+[source,typescript]
+----
+interface Feedback {
+    readonly message: FeedbackMessage
+    readonly code?: number
+}
+----
+====
+
+Properties::
+====
+message:: A readonly <<FeedbackMessage>> value to prompt or notify the user.
+
+code:: An optional readonly `number` value containing additional
+information passed from the native platform as `HRESULT`. This information
+may be useful for logging purposes. The API does not provide translation of
+these codes, the API user must advise the Card SDK documentation.`
+====
+
+
+''''''''''''''''''''''''''''''''''''
+[[FeedbackMessage, FeedbackMessage]]
+==== `FeedbackMessage`
+
+The native platform may potentially return an non-standard feedback which
+cannot be translated to any of `FeedbackMessages` values. Nonstandard feedback
+messages will be generated using a system locale.
+
+Definition::
+====
+[source,typescript]
+----
+type FeedbackMessage
+    = "Starting"
+    | "Paused"
+    | "ConnectReader"
+    | "UseCard"
+    | "UseDifferentCard"
+    | "UseDifferentCardType"
+    | "UseSingleCard"
+----
+====
+
+Values:
+====
+[horizontal]
+"Starting"::             the capture process is starting
+"Paused"::               the capture process is paused, e.g due to a lost focus
+"ConnectReader"::        card reader is disconnected or not found
+"UseCard"::              generic prompt to insert/tap/swipe a card
+"UseDifferentCard"::     a card was not read or recognized
+"UseDifferentCardType":: a card of unexpected type was used
+"UseSingleCard"::        multiple cards were used at once
+====
+
+
+''''''''''''''''''''''
+[[ApiError, ApiError]]
+==== `ApiError`
+
+The `ApiError` class extends a standard `Error` class with an optional numeric `code` property containing additional information passed from the native platform as `HRESULT`. This information may be useful for logging purposes. The API does not provide translation of these codes, the API user must advise the Card SDK documentation.
+
+The native platform may potentially return a non-standard error which cannot be translated to any of `ErrorMessages` values. Nonstandard error messages will be generated using a system locale.
+
+Definition::
+====
+[source,typescript]
+----
+interface ApiError extends Error
+{
+    readonly name = "dp.card.ApiError"
+    readonly message?: ErrorMessage | string
+    readonly code?: number;
+}
+----
+====
+
+Properties::
+====
+name:: A "dp.card.ApiError" string
+
+message:: An <<ErrorMessage>> or `string` value containing an error message.
+
+code:: An optional `number` containing an error code (HRESULT).
+====
+
+
+''''''''''''''''''''''''''''''
+[[ErrorMessage, ErrorMessage]]
+==== `ErrorMessage`
+
+Error messages are returned in a `message` property of the <<ApiError>> object.
+
+Definition::
+====
+[source,typescript]
+----
+type ErrorMessage
+    = "BadVersion"
+    | "BadConnection"
+    | "BadResponse"
+    | "Aborted"
+    | "Timeout"
+----
+====
+
+Values::
+====
+[horizontal]
+"BadVersion"::      Incompatible client version
+"BadConnection"::   Connection failure
+"BadResponse"::     Native platform failure
+"Aborted"::         The operation was aborted by the user
+"Timeout"::         The operation was aborted due the inactivity timeout
+====
+
+
+== Usage
+
+In a typical use case, a user loads a logon or enrollment page and is presented
+with a UI either starting the card capture process automatically, or allowing the user
+to start and cancel the card capture process by clicking UI elements like buttons.
+
+Below is a scenario where a logon page allows the user to initiate the card
+capture process by clicking on a btn:[Capture] button (`captureButton`)
+and stop it by clicking a btn:[Cancel] button (`cancelButton`); the card type
+is limited to Contactless Writable:
+
+Example::
+====
+[source,typescript]
+----
+import { Purpose, CardType, Feeedback, FeedbackMessage, ApiError, ErrorMessage, capture } from '@digitalpersona/card';
+
+...
+
+const captureButton = document.getElementById('capture');
+const cancelButton  = document.getElementById('cancel');
+const feedbackView = document.getElementById('feedback');
+const errorView = document.getElementById('error');
+
+// [Capture] button click handler
+captureButton.addEventListener('click', async () =>
+{
+    const ac = new AbortController();               // <1>
+
+    try {
+        setCaptureActive(true, ac);                 // <2>
+        updateFeedbackView()
+        updateErrorView()
+
+        const data = await capture("auth", {        // <3>
+            cardType: "CW",
+            signal: ac.signal,
+            onFeedback: updateFeedbackView
+        });
+
+        const token = await authenticate(data);     // <4>
+    }
+    catch(e) {
+        updateErrorView(e);                         // <5>
+    }
+    finally {
+        setCaptureActive(false);                    // <6>
+        updateFeedbackView()
+    }
+});
+
+// Update state of [Capture] and [Cancel] buttons in a consistent way,
+// and attach a cancellation handler.
+function setCaptureActive(capturing: boolean, ac?: AbortController)
+{
+    captureButton.disabled = capturing;             // <7>
+    cancelButton.disabled = !capturing;             // <8>
+    cancelButton.onclick = (capturing && ac) ?
+        () => ac.abort() : null                     // <9>
+}
+
+// Update a user feedback view
+function updateFeedbackView(feedback?: Feedback) {
+    feedbackView.hidden = !feedback;
+    feedbackView.innerText = translate(feedback) || '';
+}
+
+// Update an error view
+function updateErrorView(error?: ApiError) {
+    errorView.hidden = !error;
+    errorView.innerText = translate(error) || '';
+}
+
+// Translate feedbacks/errors to human-readable prompts/notifications.
+// NOTE: this example show use of the Angular's `$localize` taggged
+// template literals for API message localization; other frameworks
+// may use their own localization serices.
+function translate({
+    message?: FeedbackMessage | ErrorMessage | string,
+    code?: number
+}){
+    if (!message) return "";
+    switch(message) {
+        // feedbacks
+        case "Starting"             : return $localize`Starting...`;
+        case "Paused"               : return $localize`Paused, click on the page to resume.`;
+        case "ConnectReader"        : return $localize`Connect a card reader.`;
+        case "UseCard"              : return $localize`Tap a card.`;
+        case "UseDifferentCard"     : return $localize`Use a different card.`;
+        case "UseDifferentCardType" : return $localize`Use a card of different type.`;
+        case "UseSingleCard"        : return $localize`Use a single card.`;
+        // errors
+        case "BadVersion"           : return $localize`Incompatible client version.`;
+        case "BadConnection"        : return $localize`Connection failure.`;
+        case "BadResponse"          : return $localize`Service failure.`;
+        case "Aborted"              : return $localize`The operation was aborted.`;
+        // Show unknown platform-generated messages with codes "as-is".
+        // The message will be in a system locale, not a browser locale.
+        default:
+            return `${message || `Oops!`} Code: ${code || "N/A"}`;
+    }
+}
+----
+
+'''
+<1> prepare an `AbortController` object to be able to cancel the capture request
+    and create a handler for a btn:[Click] button
+<2> update the UI to indicate a capture process is started
+<3> start the capture flow, passing the purpose, card type, an abort signal
+    and feedback handler reference.
+<4> receive card data and use it for authentication.
+<5> handle errors.
+<6> update the UI to indicate the capture process is stopped.
+<7> disable the btn:[Capture] button when capturing to prevent second click;
+    enable otherwise.
+<8> enable the btn:[Cancel] button when capturing; disable otherwise.
+<9> attach the `AbortController` to the btn:[Cancel] when capturing
+====
+
+

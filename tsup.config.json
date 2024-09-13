@@ -1,0 +1,17 @@
+{
+  "name": "@digitalpersona/card",
+  "globalName": "dp.card",
+  "platform": "browser",
+  "entry": [
+    "src/index.ts"
+  ],
+  "external": [ "WebSdk", "dp.core" ],
+  "skipNodeModulesBundle": true,
+  "-noExternal": [ "*" ],
+  "format": [ "esm", "iife" ],
+  "-target": [ "chrome", "edge", "firefox" ],
+  "dts": true,
+  "splitting": false,
+  "sourcemap": true,
+  "clean": true
+}
