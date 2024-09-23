@@ -62,7 +62,7 @@ export function capture(
     // validate input
     if (!purpose) return Promise.reject(new Error("dp.card.capture.purpose.empty"))
 
-    if (options?.signal) return Promise.reject(new ApiError("Aborted"))
+    if (options?.signal?.aborted) return Promise.reject(new ApiError("Aborted"))
 
     return new Promise((resolve, reject) => {
         try {
@@ -71,7 +71,7 @@ export function capture(
             let lastActivity = Date.now()
             // register a new activity, after checking we're still good to go
             const bump = () => {
-                if (options?.signal) abort()
+                if (options?.signal?.aborted) abort()
                 lastActivity = Date.now()
             }
             // transient states
@@ -146,7 +146,7 @@ export function capture(
             // Note: using safer recursive setTimeout instead of setInterval to guarantee
             // execution time never gets longer than the timer interval
             let watchdog = window.setTimeout(function check() {
-                if (options?.signal)                        return abort()
+                if (options?.signal?.aborted)               return abort()
                 if ((Date.now() - lastActivity) > timeout)  return fail("Timeout")
                 watchdog = window.setTimeout(check, watchdogInterval)
             }, watchdogInterval)
