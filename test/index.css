@@ -1,0 +1,10 @@
+
+main form.stopped {
+  #prompt, #start  { display: block; }
+  #feedback, #cancel { display: none; }
+}
+
+main form.started {
+  #prompt, #start  { display: none; }
+  #feedback, #cancel { display: block; }
+}
