@@ -15,6 +15,7 @@ export interface CaptureOptions {
     readonly signal?: AbortSignal                            // A capture abort signal from an `AbortController`
     readonly onFeedback?: FeedbackHandler                    // A capture feeedback handler
     readonly channelOptions?: WebSdk.WebChannelOptions       // TODO: or pass a prepared channel?
+    readonly debug: boolean
 }
 
 /**@public
@@ -64,24 +65,29 @@ export function capture(
 
     if (options?.signal?.aborted) return Promise.reject(new ApiError("Aborted"))
 
+    const log = options?.debug ? console.log : () => {}
+
+    log("==>capture()", purpose, options)
     return new Promise((resolve, reject) => {
         try {
             const channel = new WebSdk.WebChannelClient("smartcards", options?.channelOptions)
 
             let lastActivity = Date.now()
+            let aborting = false
             // register a new activity, after checking we're still good to go
             const bump = () => {
-                if (options?.signal?.aborted) abort()
+                if (!aborting && options?.signal?.aborted) abort()
                 lastActivity = Date.now()
             }
             // transient states
-            const connect   = ()                    => { bump(); channel.connect()  }
-            const send      = (command: Command)    => { bump(); channel.sendDataTxt(Base64Url.fromJSON(command)) }
+            const connect   = ()                    => { bump(); log("connecting..."); channel.connect()  }
+            const send      = (command: object)    => { bump(); log("sending...", command); channel.sendDataTxt(Base64Url.fromJSON(command)) }
 
             // terminal states; USE ONLY THOSE TO RESOLVE/REJECT!
-            const done  = (value: CaptureResult)            => { reset(); resolve(value) }
-            const fail  = (message: string, code?: number)  => { reset(); reject(new ApiError(message, code)) }
+            const done  = (value: CaptureResult)            => { reset(); log("<==capture(): done", value); resolve(value) }
+            const fail  = (message: string, code?: number)  => { reset(); log("<==capture(): fail", message, code); reject(new ApiError(message, code)) }
             const abort = () => {
+                aborting = true
                 send(new Command(MethodType.GetCardCancel))
                 fail("Aborted")
             }
@@ -101,6 +107,7 @@ export function capture(
                 switch (Type) {
                     case MessageType.Reply: {
                         const res = decodeAs<Reply>(Data)
+                        log("Got reply", res)
                         if (!res || res.Method !== MethodType.GetCardDataEx) return // silently ignore unexpected replies
                         const code = unsigned(res?.Result ?? 0)
                         if (code > 0x7FFFFFFF) return fail("BadResponse", code) // TODO: does "BadVersion" occurs here too?
@@ -113,6 +120,7 @@ export function capture(
                     }
                     case MessageType.AsyncNotification: {
                         const res = decodeAs<NotificationEx>(Data)
+                        log("Got async note", res)
                         if (!res) return
                         if ((typeof(res?.Event) === "undefined")) return
                         if (res.Event === 0) {

@@ -1,13 +1,15 @@
 const { capture } = 'dp.card';
 
 
-const captureButton = document.getElementById('capture');
+const form = document.getElementById('capture');
+
+const startButton = document.getElementById('start');
 const cancelButton  = document.getElementById('cancel');
 const feedbackView = document.getElementById('feedback');
 const errorView = document.getElementById('error');
 
 // [Capture] button click handler
-captureButton.onclick = async () =>
+startButton.onclick = async () =>
 {
     const ac = new AbortController();
 
@@ -16,10 +18,12 @@ captureButton.onclick = async () =>
         updateFeedbackView()
         updateErrorView()
 
-        const data = await dp.card.capture("auth", {
-            cardType: "CW",
+        const data = await dp.card.capture(form.purpose.value, {
+            cardType: form.cardType.value,
             signal: ac.signal,
-            onFeedback: updateFeedbackView
+            onFeedback: updateFeedbackView,
+            channelOptions: { debug: true },
+            debug: true
         });
 
         // TODO: show card data
@@ -37,7 +41,7 @@ captureButton.onclick = async () =>
 // and attach a cancellation handler.
 function setCaptureActive(capturing, ac)
 {
-    captureButton.disabled = capturing;
+    startButton.disabled = capturing;
     cancelButton.disabled = !capturing;
     cancelButton.onclick = (capturing && ac) ?
         () => ac.abort() : null

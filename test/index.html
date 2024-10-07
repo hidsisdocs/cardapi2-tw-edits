@@ -11,11 +11,26 @@
     </header>
 
     <main>
-      <form class="stopped">
+      <form id="capture" class="stopped" action="javascript:void(0);">
+
+        <fieldset>
+          <label>Purpose
+            <input name="purpose" type="radio" value="enroll" checked>Enrollment</input>
+            <input name="purpose" type="radio" value="auth">Authentication</input>
+          </label>
+        </fieldset>
+
+        <fieldset>
+          <label>Card Type
+            <input name="cardType" type="radio" value="CW" checked>Contactless Writable</input>
+            <input name="cardType" type="radio" value="CID">Contactless ID</input>
+          </label>
+        </fieldset>
+
         <div id="prompt"></div>
         <div id="feedback"></div>
 
-        <button id="capture">Capture</button>
+        <button id="start">Start</button>
         <button id="cancel">Cancel</button>
         <dic id="error"></dic>
       </form>
@@ -24,9 +39,9 @@
     <footer></footer>
 
 
-    <script type="text/javascript" src="./../@types/WebSdk/index.js"></script>
-    <script type="text/javascript" src="./../node_modules/@digitalpersona/core/dist/es6.bundles/index.umd.js"></script>
-    <script type="text/javascript" src="./../dist/es6.bundles/index.umd.js"></script>
+    <script type="text/javascript" src="./@digitalpersona/WebSdk/index.js"></script>
+    <script type="text/javascript" src="./@digitalpersona/core/index.umd.js"></script>
+    <script type="text/javascript" src="./@digitalpersona/card/index.umd.js"></script>
     <script type="text/javascript" src="./index.js"></script>
   </body>
 </html>
