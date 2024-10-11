@@ -1,12 +1,22 @@
-const { capture } = 'dp.card';
+/** import { capture } from "@digitalpersona/card" */
+const { capture } = dp.card;
 
 
-const form = document.getElementById('capture');
+const form = /** @type {!HTMLFormElement} */
+    (document.getElementById('capture'));
 
-const startButton = document.getElementById('start');
-const cancelButton  = document.getElementById('cancel');
-const feedbackView = document.getElementById('feedback');
-const errorView = document.getElementById('error');
+const startButton = /** @type {!HTMLButtonElement} */
+    (document.getElementById('start'));
+const cancelButton  = /** @type {!HTMLButtonElement} */
+    (document.getElementById('cancel'));
+const feedbackView = /** @type {!HTMLDivElement} */
+    (document.getElementById('feedback'));
+const errorView = /** @type {!HTMLDivElement} */
+    (document.getElementById('error'));
+const resultView = /** @type {!HTMLDivElement} */
+    (document.getElementById('result'));
+const rawMessages = /** @type {!HTMLInputElement} */
+    (document.getElementById('rawMessages'));
 
 // [Capture] button click handler
 startButton.onclick = async () =>
@@ -18,7 +28,7 @@ startButton.onclick = async () =>
         updateFeedbackView()
         updateErrorView()
 
-        const data = await dp.card.capture(form.purpose.value, {
+        const data = await capture(form.purpose.value, {
             cardType: form.cardType.value,
             signal: ac.signal,
             onFeedback: updateFeedbackView,
@@ -26,7 +36,7 @@ startButton.onclick = async () =>
             debug: true
         });
 
-        // TODO: show card data
+        resultView.innerText = JSON.stringify(data, null, 2)
     }
     catch(e) {
         updateErrorView(e);
@@ -41,6 +51,7 @@ startButton.onclick = async () =>
 // and attach a cancellation handler.
 function setCaptureActive(capturing, ac)
 {
+    form?.classList.toggle('started', capturing)
     startButton.disabled = capturing;
     cancelButton.disabled = !capturing;
     cancelButton.onclick = (capturing && ac) ?
@@ -66,7 +77,12 @@ function updateErrorView(error) {
 function translate(msgOrError){
     if (!msgOrError) return ""
     const { message, code } = msgOrError
-    if (!message) return "";
+    return (rawMessages.checked) ?
+        getRawMessage(message, code) :
+        getLocalizedMesage(message, code)
+}
+
+function getLocalizedMesage(message, code) {
     switch(message) {
         // feedbacks
         case "Starting"             : return `Starting...`;
@@ -76,14 +92,20 @@ function translate(msgOrError){
         case "UseDifferentCard"     : return `Use a different card.`;
         case "UseDifferentCardType" : return `Use a card of different type.`;
         case "UseSingleCard"        : return `Use a single card.`;
-        // errors
+        // // errors
         case "BadVersion"           : return `Incompatible client version.`;
         case "BadConnection"        : return `Connection failure.`;
         case "BadResponse"          : return `Service failure.`;
         case "Aborted"              : return `The operation was aborted.`;
+        case "Finished"             : return `The operation complete.`;
         // Show unknown platform-generated messages with codes "as-is".
         // The message will be in a system locale, not a browser locale.
         default:
-            return `${message || `Oops!`} Code: ${code || "N/A"}`;
+            return getRawMessage(message, code)
     }
+
+}
+
+function getRawMessage(message, code) {
+    return `"${message || `Oops!`}" (${code != null ? code.toString(16) : "n/a"})`;
 }

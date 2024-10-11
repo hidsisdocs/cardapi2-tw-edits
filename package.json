@@ -29,14 +29,6 @@
   "dependencies": {
     "tslib": "^2.7.0"
   },
-  "peerDependencies": {
-    "@digitalpersona/core": "^0.2.6"
-  },
-  "peerDependenciesMeta": {
-    "@digitalpersona/core": {
-      "optional": true
-    }
-  },
   "repository": {
     "type": "git",
     "url": ""

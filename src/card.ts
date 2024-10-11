@@ -1,4 +1,5 @@
-import { Base64UrlString } from "@digitalpersona/core"
+import { Base64UrlString } from "./utils"
+import { Purpose } from "./capture"
 
 /**@public
  */
@@ -21,8 +22,10 @@ export type CardTechnology
  * A result returned by the `capture` function in a resolved promise.
  */
 export interface CaptureResult {
+    readonly purpose: Purpose
     readonly cardType: CardType
-    readonly cardData: Base64UrlString       // AuthenticationData or EnrollmentData, base64url-encoded
+    readonly tech: CardTechnology
+    readonly cardData: EnrollmentData | AuthenticationData  // AuthenticationData or EnrollmentData
 }
 
 /**@public

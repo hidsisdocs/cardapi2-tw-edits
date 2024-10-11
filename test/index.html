@@ -7,40 +7,56 @@
   <body>
 
     <header>
-
+      <h1>Card API 2.0 Test</h1>
     </header>
 
     <main>
-      <form id="capture" class="stopped" action="javascript:void(0);">
+      <form id="capture" action="javascript:void(0);">
 
-        <fieldset>
-          <label>Purpose
-            <input name="purpose" type="radio" value="enroll" checked>Enrollment</input>
-            <input name="purpose" type="radio" value="auth">Authentication</input>
-          </label>
-        </fieldset>
+        <section>
+          <fieldset>
+            <legend>Purpose</legend>
+            <label><input name="purpose" type="radio" value="enroll" checked>Enrollment</label>
+            <label><input name="purpose" type="radio" value="auth">Authentication</label>
+            <label><input name="purpose" type="radio" value="invalid">[Intentionally invalid value]</label>
+          </fieldset>
 
-        <fieldset>
-          <label>Card Type
-            <input name="cardType" type="radio" value="CW" checked>Contactless Writable</input>
-            <input name="cardType" type="radio" value="CID">Contactless ID</input>
-          </label>
-        </fieldset>
+          <fieldset>
+            <legend>Card type</legend>
+            <label><input name="cardType" type="radio" value="" checked>Any</label>
+            <label><input name="cardType" type="radio" value="CW">Contactless Writable</label>
+            <label><input name="cardType" type="radio" value="CID">Contactless ID</label>
+            <label><input name="cardType" type="radio" value="invalid">[Intentionally invalid value]</label>
+          </fieldset>
+        </section>
 
-        <div id="prompt"></div>
-        <div id="feedback"></div>
+        <section class="inline">
+          <button id="start">Start</button>
+          <button id="cancel">Cancel</button>
+        </section>
 
-        <button id="start">Start</button>
-        <button id="cancel">Cancel</button>
-        <dic id="error"></dic>
+        <section>
+          <div>
+            <div id="feedback">Click "Start" to capture a card, "Cancel" to stop</div>
+            <div id="error"></div>
+          </div>
+          <label><input id="rawMessages" type="checkbox">Show raw messages</label>
+        </section>
+
+        <section>
+          <fieldset>
+            <legend>Result</legend>
+            <pre id="result"></pre>
+          </fieldset>
+        </section>
       </form>
+
     </main>
 
     <footer></footer>
 
 
     <script type="text/javascript" src="./@digitalpersona/WebSdk/index.js"></script>
-    <script type="text/javascript" src="./@digitalpersona/core/index.umd.js"></script>
     <script type="text/javascript" src="./@digitalpersona/card/index.umd.js"></script>
     <script type="text/javascript" src="./index.js"></script>
   </body>

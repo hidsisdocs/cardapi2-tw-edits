@@ -1,4 +1,5 @@
-import { Base64UrlString } from "@digitalpersona/core";
+import { Base64UrlString } from "./utils";
+import { Purpose } from "./capture";
 /**@public
  */
 export type CardType = "CID" | "CW";
@@ -7,8 +8,10 @@ export type CardTechnology = "Proximity 125 kHz" | "iClass Legacy" | "MIFARE Cla
  * A result returned by the `capture` function in a resolved promise.
  */
 export interface CaptureResult {
+    readonly purpose: Purpose;
     readonly cardType: CardType;
-    readonly cardData: Base64UrlString;
+    readonly tech: CardTechnology;
+    readonly cardData: EnrollmentData | AuthenticationData;
 }
 /**@public
  * The `AuthenticationData` is contained in the `CaptureResult.Data` returned for an authentication capture.
