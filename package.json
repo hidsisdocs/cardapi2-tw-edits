@@ -2,8 +2,8 @@
   "name": "@digitalpersona/card",
   "globals": [ "dp.card" ],
   "amdName": "dp.card",
-  "version": "0.1.1",
-  "description": "DigitalPersona Card API Library",
+  "version": "2.0.0-pre3",
+  "description": "HID DigitalPersona Card API Library",
   "author": "HID Global",
   "maintainers": [
     {
@@ -16,6 +16,13 @@
     "Card"
   ],
   "type": "module",
+  "files": [
+    "src/",
+    "dist/",
+    "docs/**/*.adoc",
+    "@types/",
+    "LICENSE"
+  ],
   "source": "./src/index.ts",
   "main": "./dist/es6.bundles/index.umd.js",
   "exports": "./dist/es6.bundles/index.esm.js",
@@ -64,7 +71,7 @@
     "api": "npx api-extractor run --local --verbose",
     "api-doc": "npx api-documenter markdown -i ./dist/api -o ./dist/api/docs",
     "api-all": "tsc && npm run api && npm run api-doc",
-    "prepublishOnly": "npm run build && npm run test-once"
+    "-prepublishOnly": "npm run build && npm run test-once"
   },
   "devDependencies": {
     "@eslint/js": "^9.9.1",
@@ -81,5 +88,8 @@
     "tsup": "^8.2.4",
     "typescript": "^5.5.4",
     "typescript-eslint": "^8.4.0"
+  },
+  "peerDependencies": {
+    "@digitalpersona/websdk": "^1.0.0-pre1"
   }
 }
