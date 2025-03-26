@@ -1,7 +1,7 @@
 ///<reference types="WebSdk" />
 import { Base64Url, Utf8 } from "./utils"
 import { CaptureResult, CardType } from "./card"
-import { FeedbackHandler } from "./feedback"
+import { Feedback, FeedbackHandler } from "./feedback"
 import { MethodType, Command, Message, MessageType, NotificationEx, Reply, ReplyCode } from "./messages"
 import { ApiError } from "./errors"
 
@@ -71,6 +71,15 @@ export function capture(
     log("==>capture()", purpose, options)
     return new Promise((resolve, reject) => {
         try {
+            // an exception-safe feedback handler wrapper
+            const onFeedback = (feedback: Feedback) => {
+                if (options?.onFeedback) try {
+                    options.onFeedback(feedback)
+                } catch(e) {
+                    log (`Exception thrown in 'dp.card.capture.onFeedback': ${e || "n/a"}`)
+                }
+            }
+
             const channel = new WebSdk.WebChannelClient("smartcards", options?.channelOptions)
 
             // WORKAROUND! WebSdk caches SRP/session data, which causes issues with ADC upgrades. Clean it.
@@ -146,7 +155,7 @@ export function capture(
                         const res = decodeAs<NotificationEx>(Data)
                         log("Got async note", res)
                         if (res) try {
-                            options?.onFeedback?.(res)
+                            onFeedback(res)
                         } catch (e) {
                             log("Feedback handler has thrown.", e)
                         }
@@ -160,7 +169,7 @@ export function capture(
             channel.onConnectionFailed = onConnectionFailed
             channel.onDataReceivedTxt = onDataReceivedTxt
 
-            options?.onFeedback?.({ message: "Starting" })
+            onFeedback({ message: "Starting" })
             connect()
 
             const timeout = (options?.inactivityTimeout ?? Number.POSITIVE_INFINITY)*1000

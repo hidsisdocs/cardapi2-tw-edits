@@ -1,0 +1,40 @@
+{
+  "name": "test",
+  "version": "1.0.0",
+  "type": "module",
+  "description": "HID DigitalPersona Card API Test (Vanilla JS)",
+  "author": "HID Global",
+  "maintainers": [
+    {
+      "name": "Andrey Bronnikov",
+      "email": "Andrey.Bronnikov@hidglobal.com"
+    }
+  ],
+  "dependencies": {
+    "@digitalpersona/card": "^2.0.0-pre3",
+    "@digitalpersona/websdk": "^1.0.0-pre1"
+  },
+  "browser": {
+    "crypto": false
+  },
+  "volta": {
+    "node": "20.17.0"
+  },
+  "scripts": {
+    "clean": "rimraf ./dist",
+    "deploy-websdk": "copy .\\node_modules\\@digitalpersona\\websdk\\dist\\websdk.client.ui.* .\\dist\\",
+    "deploy-card": "copy .\\node_modules\\@digitalpersona\\card\\dist\\es6.bundles\\index.umd.* .\\dist\\",
+    "deploy": "npm run deploy-websdk && npm run deploy-card",
+    "build": "npm run clean && mkdirp ./dist && npm run deploy",
+    "start": "npm run build && http-server -o -c-1"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.9.1",
+    "@types/eslint__js": "^8.42.3",
+    "eslint": "^9.9.1",
+    "eslint-plugin-compat": "^6.0.0",
+    "http-server": "^14.1.1",
+    "mkdirp": "^1.0.4",
+    "rimraf": "^6.0.1"
+  }
+}

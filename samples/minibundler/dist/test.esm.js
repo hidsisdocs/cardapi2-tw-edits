@@ -301,5 +301,147 @@ function decodeAs(data) {
   return JSON.parse(Utf8.fromBase64Url(data != null ? data : ""));
 }
 
-export { ApiError, capture };
-//# sourceMappingURL=index.esm.js.map
+// const { capture } = dp.card;
+
+function _catch(body, recover) {
+  try {
+    var result = body();
+  } catch (e) {
+    return recover(e);
+  }
+  if (result && result.then) {
+    return result.then(void 0, recover);
+  }
+  return result;
+}
+const form = /** @type {!HTMLFormElement} */
+document.getElementById('capture');
+function _finallyRethrows(body, finalizer) {
+  try {
+    var result = body();
+  } catch (e) {
+    return finalizer(true, e);
+  }
+  if (result && result.then) {
+    return result.then(finalizer.bind(null, false), finalizer.bind(null, true));
+  }
+  return finalizer(false, result);
+}
+const startButton = /** @type {!HTMLButtonElement} */
+document.getElementById('start');
+const cancelButton = /** @type {!HTMLButtonElement} */
+document.getElementById('cancel');
+const feedbackView = /** @type {!HTMLDivElement} */
+document.getElementById('feedback');
+const errorView = /** @type {!HTMLDivElement} */
+document.getElementById('error');
+const resultView = /** @type {!HTMLDivElement} */
+document.getElementById('result');
+const rawMessages = /** @type {!HTMLInputElement} */
+document.getElementById('rawMessages');
+
+// [Capture] button click handler
+startButton.onclick = function () {
+  try {
+    const ac = new AbortController();
+    const _temp = _finallyRethrows(function () {
+      return _catch(function () {
+        resultView.innerText = "";
+        setCaptureActive(true, ac);
+        updateFeedbackView();
+        updateErrorView();
+        return Promise.resolve(capture(form.purpose.value, {
+          cardType: form.cardType.value,
+          signal: ac.signal,
+          onFeedback: updateFeedbackView,
+          channelOptions: {
+            debug: true
+          },
+          debug: true
+        })).then(function (data) {
+          resultView.innerText = JSON.stringify(data, null, 2);
+        });
+      }, function (e) {
+        updateErrorView(e);
+      });
+    }, function (_wasThrown, _result) {
+      setCaptureActive(false);
+      updateFeedbackView();
+      if (_wasThrown) throw _result;
+      return _result;
+    });
+    return Promise.resolve(_temp && _temp.then ? _temp.then(function () {}) : void 0);
+  } catch (e) {
+    return Promise.reject(e);
+  }
+};
+
+// Update state of [Capture] and [Cancel] buttons in a consistent way,
+// and attach a cancellation handler.
+function setCaptureActive(capturing, ac) {
+  form == null || form.classList.toggle('started', capturing);
+  startButton.disabled = capturing;
+  cancelButton.disabled = !capturing;
+  cancelButton.onclick = capturing && ac ? () => ac.abort() : null;
+}
+
+// Update a user feedback view
+function updateFeedbackView(feedback) {
+  feedbackView.hidden = !feedback;
+  feedbackView.innerText = translate(feedback) || '';
+}
+
+// Update an error view
+function updateErrorView(error) {
+  errorView.hidden = !error;
+  errorView.innerText = translate(error) || '';
+}
+
+// Translate feedbacks/errors to human-readable prompts/notifications.
+// NOTE: this example show use of the Angular's `$localize` taggged
+// template literals for API message localization; other frameworks
+// may use their own localization serices.
+function translate(msgOrError) {
+  if (!msgOrError) return "";
+  const {
+    message,
+    code
+  } = msgOrError;
+  return rawMessages.checked ? getRawMessage(message, code) : getLocalizedMesage(message, code);
+}
+function getLocalizedMesage(message, code) {
+  switch (message) {
+    // feedbacks
+    case "Starting":
+      return `Starting...`;
+    case "Paused":
+      return `Paused, click on the page to resume.`;
+    case "ConnectReader":
+      return `Connect a card reader.`;
+    case "UseCard":
+      return `Tap a card.`;
+    case "UseDifferentCard":
+      return `Use a different card.`;
+    case "UseDifferentCardType":
+      return `Use a card of different type.`;
+    case "UseSingleCard":
+      return `Use a single card.`;
+    // // errors
+    case "BadVersion":
+      return `Incompatible client version.`;
+    case "BadConnection":
+      return `Connection failure.`;
+    case "BadResponse":
+      return `Service failure.`;
+    case "Aborted":
+      return `The operation was aborted.`;
+    // Show unknown platform-generated messages with codes "as-is".
+    // The message will be in a system locale, not a browser locale.
+    default:
+      return getRawMessage(message, code);
+  }
+}
+function getRawMessage(message, code) {
+  return `"${message || `Oops!`}" (${code != null ? code.toString(16) : "n/a"})`;
+}
+//# sourceMappingURL=test.esm.js.map

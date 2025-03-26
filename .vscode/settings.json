@@ -62,4 +62,5 @@
       }
     ]
   },
+  "asciidoc.antora.enableAntoraSupport": true,
 }

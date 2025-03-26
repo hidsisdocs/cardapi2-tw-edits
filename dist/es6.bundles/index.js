@@ -157,6 +157,14 @@ function capture(purpose, options) {
   return new Promise((resolve, reject) => {
     try {
       var _options$inactivityTi;
+      // an exception-safe feedback handler wrapper
+      const onFeedback = feedback => {
+        if (options != null && options.onFeedback) try {
+          options.onFeedback(feedback);
+        } catch (e) {
+          log(`Exception thrown in 'dp.card.capture.onFeedback': ${e || "n/a"}`);
+        }
+      };
       const channel = new WebSdk.WebChannelClient("smartcards", options == null ? void 0 : options.channelOptions);
       // WORKAROUND! WebSdk caches SRP/session data, which causes issues with ADC upgrades. Clean it.
       // sessionStorage.removeItem("websdk")
@@ -250,7 +258,7 @@ function capture(purpose, options) {
               const res = decodeAs(Data);
               log("Got async note", res);
               if (res) try {
-                options == null || options.onFeedback == null || options.onFeedback(res);
+                onFeedback(res);
               } catch (e) {
                 log("Feedback handler has thrown.", e);
               }
@@ -263,7 +271,7 @@ function capture(purpose, options) {
       channel.onConnectionSucceed = onConnectionSucceed;
       channel.onConnectionFailed = onConnectionFailed;
       channel.onDataReceivedTxt = onDataReceivedTxt;
-      options == null || options.onFeedback == null || options.onFeedback({
+      onFeedback({
         message: "Starting"
       });
       connect();
