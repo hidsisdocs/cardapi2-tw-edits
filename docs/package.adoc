@@ -1,0 +1,92 @@
+# NPM package best practices
+
+## Typescript of Javascript with JSDoc?
+
+### Typescript
+
+Pros:
+- More powerfuls type system, e.g. allows "branded types"
+- TSC produces typings file `.d.ts`
+- Better code refactoring
+
+Cons:
+- Requires installing more dependencies (larger `node_modules` size)
+- Requires additional build step (TS -> JS)
+- Static typing does not prevent runtime errors (e.g. `undefined` values) caused by the bad JS code
+- Documentation
+
+### Javascritpt witl JSDoc
+
+Pros:
+- No need to install typescript
+- No need in additional transpilation step
+
+Cons:
+- Still needs transpilation steps if need to target different ES standards (ES6, ESNext etc), same as for Typescript
+- JSDoc is not as powerful as Typescript type system (e.g. no "branded types")
+
+
+
+## Package.json
+- `name`: name of the package, must be unique in the NPM registry. Prefer a scoped name.
+- `version`: version of the package, must follow [semver](https://semver.org/) rules
+- `description`: short description of the package
+- `author': author of the package, usually in a form "Name <email>". Should be a person responsible for the package, not a company.
+- `contributors`: list of contributors to the package, usually in a form "Name <email>". Can include a company name and email.
+   NOTE: Do not add a `maintainers` field, the npm will add it automatically when you publish the package.
+- `license`: license of the package, usually in a form "MIT", "Apache-2.0", "ISC", etc. Include a corresponding `LICENSE` file in the root of the package.
+
+### `main` vs `exports`
+
+- `main` declares an entry point of the package, usually `index.js` or `lib/index.js`. Can be ES module of CommonJS/UMD.
+   But this does not prevent users from importing other files in the package, using a path ("deep imports"). This may be
+   a problem, because file layout of the package becomes a public interface, and changes to it will be a braking change.
+   Thus, if you decide to use the `main` field, bundle all your library files into a single file, preventing problems of deep imports.
+   NOTE: the `main` field is not used by modern NodeJS if `exports` field is present. Add this field only if you absolutely need
+   a backward compatibility with older NodeJS versions (which should happen almost never).
+
+- `exports` is a newer and preferred standard to declare endpoints. It overrides the `main` field, disables unapproved deep imports,
+  allows approved deep imports, allows to declare different entry points for different module systems (CommonJS, ESM, etc),
+  allows conditional exports. See https://nodejs.org/api/packages.html#package-entry-points for details.
+
+- With conditional exports:
+-- add "import" field if you provide an ESM module
+-- add "require" field if you provide a CommonJS/UMD module
+-- add "default" export at the very end. NodeJS will fallback on it if all other conditions are not met. UMD is a safe choice here.
+
+- for client-side NPM modules intended to run in browsers, it is nice to work with UNPKG nicely. For that, produce an IIFE or
+  UMD module and refer this module either in `exports.default` or in `exports.unpkg` field.`
+
+
+## Recipes
+
+### Browser-only library
+
+* If your library is a collection of independent modules, use `exports` to declare each module as a separate entry point; do not bundle.
+* If your library uses modules for implementation but provide a cohesive API, create a "barrel" `index.ts` or `index.js` file, bundle it
+  into a single file and use `exports` to declare it as a single entry point, preventing problems of deep imports.
+  Provide 2 bundles:
+  - IIFE or UMD  for loading via <script> tag; target to ES standard for to the lowest supported browser (ES5 or ES6); provide a minified version with a sourcemap;
+    alternatively provide a non-minified version under "development" condition.
+  - ESM for loading via `import` statement into an app code; target to the latest ES standard; do not minify; provide a sourcemapp if transpiled from Typescrypt.
+  tree-shaking during app bundling.
+* In any case, provide typings.
+
+```json
+{
+  "exports": {
+    "node": "this-library-does-not-support-node.js",
+    "development": {
+      "unpkg": "./dist/index.umd.js",           // Either UMD of IIFE module (ES5-6), for build-less loading via <script> tag from unpkg.com, non-minified
+      "require": "./dist/index.umd.js",         // (optional) UMD module (compatible with CommonJS), non-minified
+    },
+    "default": {                                // MUST be last!
+      "types": "./dist/index.d.ts",             // MUST be first!
+      "import": "./dist/index.mjs",             // ESNext module, tree-shakeable, non-minified
+      "unpkg": "./dist/index.umd.min.js",       // Either UMD of IIFE module (ES5-6), for build-less loading via <script> tag from unpkg.com, minified
+      "require": "./dist/index.umd.min.js",     // (optional) UMD module (compatible with CommonJS)
+    }
+  }
+}
+```
+

@@ -1,0 +1,48 @@
+<h1>Card API 2.0 Test</h1>
+
+<main>
+  <form [formGroup]="inputForm">
+
+    <section>
+      <fieldset [disabled]="capturing">
+        <legend>Purpose</legend>
+        <label><input formControlName="purpose" type="radio" value="enroll">Enrollment</label>
+        <label><input formControlName="purpose" type="radio" value="auth">Authentication</label>
+        <label><input formControlName="purpose" type="radio" value="invalid">[Intentionally invalid value]</label>
+      </fieldset>
+
+      <fieldset [disabled]="capturing">
+        <legend>Card type</legend>
+        <label><input formControlName="cardType" type="radio" value="">Any</label>
+        <label><input formControlName="cardType" type="radio" value="CW">Contactless Writable</label>
+        <label><input formControlName="cardType" type="radio" value="CID">Contactless ID</label>
+        <label><input formControlName="cardType" type="radio" value="invalid">[Intentionally invalid value]</label>
+      </fieldset>
+    </section>
+
+    <section class="inline">
+      <button id="start" (click)="start()" [disabled]="capturing">Start</button>
+      <button id="cancel" (click)="cancel()" [disabled]="!capturing">Cancel</button>
+    </section>
+
+  </form>
+
+  <form [formGroup]="outputForm">
+
+    <section>
+      <label><input formControlName="showRawMessages" type="checkbox">Show raw messages</label>
+      <div class="info" *ngIf="feedback">{{feedback}}</div>
+      <div class="error" *ngIf="error">{{error}}</div>
+    </section>
+
+    <section *ngIf="result">
+      <fieldset>
+        <legend>Result</legend>
+        <pre id="result">{{result}}</pre>
+      </fieldset>
+    </section>
+  </form>
+
+</main>
+
+<footer></footer>

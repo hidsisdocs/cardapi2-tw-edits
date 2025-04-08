@@ -1,0 +1,16 @@
+@startuml
+!pragma teoz true
+skinparam SequenceMessageAlign center
+
+participant Page
+control CardJS
+control CardAPI
+participant Reader
+participant Card
+
+Page -> CardJS : capture
+CardJS -> CardAPI : Command("GetCardDataEx", { purpose, cardType } )
+CardJS <-- CardAPI : NotificationEx("Starting")
+Page <-- CardJS : new Promise()
+
+@enduml

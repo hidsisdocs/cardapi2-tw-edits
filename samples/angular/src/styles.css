@@ -1,0 +1,64 @@
+body {
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-size: smaller;
+}
+
+section {
+  margin-bottom: 1em;
+}
+
+:root {
+  --primary-color: #605DC8;
+  --secondary-color: #8B89E6;
+  --accent-color: #e8e7fa;
+  --shadow-color: #E8E8E8;
+  --info-color: blue;
+  --warning-color: orange;
+  --error-color: red;
+}
+
+.info {
+  color: var(--info-color);
+}
+
+.error {
+  color: var(--error-color);
+}
+
+form {
+  padding: 1em;
+}
+
+fieldset {
+  border: 1px solid var(--accent-color);
+  margin-bottom: 1em;
+}
+
+label {
+  font-size: 0.7rem;
+  display: block;
+}
+
+input {
+  font-size: small;
+}
+
+button {
+  display: inline-block !important;
+  min-width: 8em;
+  font-size: larger;
+}
+
+button.primary {
+  padding: 10px;
+  border: solid 1px var(--primary-color);
+  background: var(--primary-color);
+  color: white;
+  border-radius: 8px;
+}
+
+pre {
+  font-family: 'Lucida Console';
+  font-size: 10pt;
+  color: var(--primary-color)
+}

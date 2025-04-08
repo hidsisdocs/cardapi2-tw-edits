@@ -2,5 +2,8 @@ node_modules
 .rpt2_cache
 .vscode
 build
-*.spec.*
 temp
+samples
+**/*.spec.*
+**/~*
+**/-*

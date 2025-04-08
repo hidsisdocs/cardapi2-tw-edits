@@ -1,6 +1,5 @@
-import { Base64Url, Base64UrlString } from "./utils"
-import { ObjectValues } from "./utils"
-import { Feedback } from "./feedback"
+import { Base64Url, Base64UrlString, ObjectValues } from "./utils.js"
+import { Feedback } from "./feedback.js"
 
 /**@internal
  *

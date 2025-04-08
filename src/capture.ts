@@ -1,20 +1,21 @@
-///<reference types="WebSdk" />
-import { Base64Url, Utf8 } from "./utils"
-import { CaptureResult, CardType } from "./card"
-import { Feedback, FeedbackHandler } from "./feedback"
-import { MethodType, Command, Message, MessageType, NotificationEx, Reply, ReplyCode } from "./messages"
-import { ApiError } from "./errors"
+///<reference types="../node_modules/@digitalpersona/websdk/dts/websdk.client.d.ts" />
+
+import { Base64Url, Utf8 } from "./utils.js"
+import { CaptureResult, CardType } from "./card.js"
+import { Feedback, FeedbackHandler } from "./feedback.js"
+import { MethodType, Command, Message, MessageType, NotificationEx, Reply, ReplyCode } from "./messages.js"
+import { ApiError } from "./errors.js"
 
 export type Purpose
     = "auth"        // Card data will be used for authentication
     | "enroll"      // Card data will be used for enrollment
 
 export interface CaptureOptions {
-    readonly cardType?: CardType                             // If not provided or empty, any card type is accepted
+    readonly cardType?: CardType | ''                        // If not provided or empty, any card type is accepted
     readonly inactivityTimeout?: number                      // inactivity timeout in seconds; default is infinite
     readonly signal?: AbortSignal                            // A capture abort signal from an `AbortController`
     readonly onFeedback?: FeedbackHandler                    // A capture feeedback handler
-    readonly channelOptions?: WebSdk.WebChannelOptions       // TODO: or pass a prepared channel?
+    readonly channelOptions?: WebSdk.WebChannelOptionsData   // TODO: or pass a prepared channel?
     readonly debug: boolean
 }
 
@@ -114,14 +115,14 @@ export function capture(
                 // TODO: `disconnect` does not stop multiply reconnection attempts and we still receive multiple onConnecctionFailed().
                 // Needs a fix in WebSdk (add an `attempts` parameter to the `WebSdkChannel.connect()` and pass 1).
                 channel.disconnect()
-                window.clearTimeout(watchdog)
+                clearTimeout(watchdog)
             }
 
             const onConnectionFailed    = () => fail("BadConnection")
             const onConnectionSucceed   = () => send(new Command(MethodType.GetCardDataEx, {
                 Version: 2,
                 Case: purpose,
-                Type: options?.cardType
+                Type: options?.cardType || '',
             }))
 
             const onDataReceivedTxt = (data: string) => {
@@ -181,10 +182,10 @@ export function capture(
             //
             // TODO: in web extensions, the `setTimeout` may not work reliably;
             // extensions should use `alarms` API.
-            let watchdog = window.setTimeout(function check() {
+            let watchdog = setTimeout(function check() {
                 if (options?.signal?.aborted)               return abort()
                 if ((performance.now() - lastActivity) > timeout)  return fail("Timeout")
-                watchdog = window.setTimeout(check, watchdogInterval)
+                watchdog = setTimeout(check, watchdogInterval)
             }, watchdogInterval)
         }
         catch(error) {

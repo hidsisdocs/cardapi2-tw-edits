@@ -1,0 +1,166 @@
+@startuml
+!pragma teoz true
+skinparam SequenceMessageAlign center
+
+actor User
+
+box Browser #EFF
+    participant Page
+    control CardJS          as CJ
+    control WebSdk.Channel  as WC
+end box
+
+queue WebSocket             as WS
+
+box Agent #DDD
+    boundary WebSdk.Agent   as WA
+    control CardAPI         as CA
+    control Auth
+    participant Reader
+    participant Card
+end box
+
+== Initialization ==
+
+User -> Page ** :load
+        Page ->     CJ **   :load
+                    CJ ->       WC **   :new('smartcard')
+
+== Enumerating readers ==
+
+        Page ->     CJ ++   :enumerateCards()
+                    CJ ->       WC ++   :isConnected()
+
+        alt #FFFFEE66 not connected
+                                return false
+                    CJ ->       WC ++   :connect()
+                            WC->WC      :connectInternal()
+                            WC->WC      :resetConnectionTimer()
+            {start}         WC<-WC ++   :setupSecureChannel()
+                            WC->WC      :key=generateSessionKey()
+                            WC->WC      :makeConenctionUrl('smartcard', user,key)
+                            WC->WC      :wsconnect(connectionUrl)
+
+                                WC ->       WS **   :new WebSocket()
+                                            WS -/?++:ping
+            alt #FDD websocket bad
+                                WC <--      WS  :onError
+            {end}   CJ <--      WC      :onConnectionFailed
+            {start}<->{end}: repeat x3
+                    CJ x<--     WC --   :reject
+            else #EFE
+                                            WS -->     WA  :onOpen
+                            &   WC <--      WS --   :onOpen
+                    CJ <--      WC      :onConnectionSucceded
+                    CJ o<--     WC --   :resolve()
+            end
+        end not connected
+
+                    CJ ->       WC ++    :isConnected()
+        alt connected
+                               return true
+
+                    CJ  ->      WC ++   :sendDataTxt(new EnumReadersCommand())
+                            WC->WC      :msg = encode(command)
+                            WC->WC      :wssend(msg)
+                                WC ->       WS --++ :send(msg)
+                                            WS -->      WA --++ :onMessage(msg)
+                                                    WA->WA      :command = decode(msg)
+                                                        WA ->       CA ++   :enumReaders()
+                                                                    CA <-->     Reader      :enumerate()
+                                                                    return readers
+                                                    WA<-WA      :msg = encode(new EnumReadersResponse(readers))
+                                            WS <-       WA --++ :send(msg)
+                                WC <--      WS --++ :onMessage(msg)
+                            WC->WC      :response = decode(msg)
+                alt #FDD error
+                    CJ x<--     WC      :reject(error)
+                else #EFE
+                            WC->WC      :readers = JSON.parse(response)
+                    CJ o<--     WC --   :resolve(readers)
+                end
+        Page <--    CJ -- : update
+    end connected
+
+== Authentication ==
+
+User -> Page    :start authentication
+        Page ->     CJ ++   :var auth = authenticate(user,cartType)
+                    CJ ->       WC ++   :isConnected()
+                                return true
+                CJ->CJ      :mode = auth
+                    CJ ->       WC ++   :sendDataTxt(new AuthAsyncCommand(user,cardType))
+                            WC->WC      :msg = encode(command)
+                            WC->WC      :wssend(msg)
+                                WC ->       WS --++ :send(msg)
+                                            WS -->      WA --++ :onMessage(msg)
+                                                    WA->WA      :command = decode(msg)
+                                                        WA ->       CA ++   :AuthenticateAsync()
+                                                                    CA ->       Auth **  : new Authentication()
+                                                                    CA ->       Auth ++  : run()
+                                                                CA->CA      :mode=auth
+                                                        WA <--      CA --   :result
+                                                    WA<-WA      :msg = encode(new AuthAsyncResponse(result))
+                                            WS <--      WA --++ :send(msg)
+                                WC <--      WS --++ :onMessage(msg)
+                            WC->WC      :response = decode(msg)
+                alt #FDD error
+                    CJ <--      WC      :reject(error)
+                else #EFE
+                    CJ <--      WC --   :resolve()
+                end
+        Page o<--    CJ -- : update
+note over Page : "Authentication started"
+
+                                                                    Auth -->        Reader      :enumerate()
+                                                            Auth -> Auth    :subscribeCardEvents()
+
+alt #EEF reader is already connected
+                                                            Auth <- Auth        :processConnectedReaders()
+                                                        WA <--      Auth ++--   :onReaderConnected(reader)
+else #EEE reader is not connected
+User ->                                                                             Reader ++   :CONNECTS A READER
+                                                                    Auth <--        Reader ++   :onConnected()
+                                                        WA <--      Auth --     :onReaderConnected(reader)
+end
+
+                                                    WA<-WA      :msg = encode(new ReaderConnectedNote(reader))
+                                            WS <--      WA --++ :send(msg)
+                                WC <--      WS --++ :onMessage(msg)
+                            WC->WC      :response = decode(msg)
+                    CJ <--      WC --++ :onReaderConnected(reader)
+        Page o<--    CJ -- :update()
+note over Page : "Reader is connected, insert card"
+
+User ->                                                                                         Card ++ :INSERTS A CARD
+                                                                                Reader <--      Card -- :onInserted()
+                                                                    Auth <--    Reader ++   :onCardReady(card)
+                                                              Auth->Auth    : authenticate(user, card)
+
+alt not authenticated
+                                                        WA <--      Auth --++: onAuthenticationFailed(error)
+                                                    WA<-WA      :msg = encode(new AuthenticationFailedNote(reader))
+                                            WS <-       WA --++ :send(msg)
+                                WC <--      WS --++ :onMessage(msg)
+                            WC->WC      :response = decode(msg)
+                    CJ <--      WC --++ :onAuthenticationFailed(reader)
+                    note over CJ : is this a final message? should we reject here?
+        Page o<--   CJ --   : update()
+note over Page : "Cannot authenticate, try a different card"
+end
+
+alt authenticated
+                                                        WA <--      Auth --++: onAuthenticated(card)
+                                                            destroy Auth
+                                                    WA<-WA      :msg = encode(new AuthenticatedNote(authData))
+                                            WS <-       WA --++ :send(msg)
+                                WC <--      WS --++ :onMessage(msg)
+                            WC->WC      :response = decode(msg)
+                    CJ <--      WC --++ :onAuthenticated(authData)
+        Page o<--   CJ --   : update()
+note over Page : "Authenticated"
+
+
+
+
+@enduml

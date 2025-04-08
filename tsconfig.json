@@ -1,48 +1,24 @@
 {
   "compilerOptions": {
-    "target": "es2015",
-    "module": "es2015",
-    "lib": ["dom", "es2015", "es2015.promise" ],
-    "typeRoots": [
-      "./@types",
-      "./node_modules/@types"
-    ],
+    "outDir": "dist/@types",
+    "emitDeclarationOnly": true,
+
+    "lib": [ "esnext", "dom" ],
+
+    /* Modules */
+    "module": "esnext",
     "moduleResolution": "node",
-    "baseUrl": "./",
-    "outDir": "./dist",
     "esModuleInterop": true,
-    "removeComments": false,
-    "preserveConstEnums": true,
-    "emitDecoratorMetadata": false,
-    "experimentalDecorators": false,
-    "sourceMap": false,
+    "removeComments": true,
     "declaration": true,
-    "noImplicitAny": true,
-    "noImplicitReturns": true,
-    "noImplicitThis": true,
-    "noFallthroughCasesInSwitch": true,
-    "strictNullChecks": true,
-    "downlevelIteration": true
+
+    /* Type Checking */
+    "strict": true,
   },
-  "files": [ "src/index.ts" ],
   "exclude": [
       "node_modules",
-      "dist"
-  ],
-  "typedocOptions": {
-    "mode": "file",
-    "out": "dist/docs",
-    "module": "commonjs",
-    "target": "es6",
-    "theme": "default",
-    "excludeExternals": true,
-    "includeDeclarations": false,
-    "excludePrivate": true,
-    "excludeProtected": true,
-    "excludeNotExported": true,
-    "stripInternal": true,
-    "ignoreCompilerErrors": true,
-    "readme": "none",
-    "exclude": [ "node_modules", "**/examples/**/*", "**/*.spec.ts", "**/private/**/*", "**/workflows/**/*" ]
-  }
+      "dist",
+      "samples",
+      "src/**/*.spec.ts"
+  ]
 }

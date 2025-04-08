@@ -1,0 +1,67 @@
+@startuml
+
+actor User
+participant Browser
+participant Page
+control CardsJS
+control WebSdk.Client as WC
+queue WebSocket as ws
+boundary WebSdk.Agent as WA
+control CardsAPI
+participant Reader
+participant Card
+
+
+== Initialization ==
+
+User -> Browser : navigate auth.html
+Browser -> Page : load
+Page -> CardsJS : load
+Page -> WC : load
+WC -> ws ** : new('?version&M1&username&sessionId')
+
+alt websocket bad
+    ws --> WC : onClose
+    WC -->x CardsJS : onConnectionFailed
+end
+ws --> WC ++ : onOpen
+WC --> ws -- : send({type:'sdk.focusChanged',data: isFocused})
+
+ws -> WA ++ : {type:'sdk.focusChanged',data: isFocused}
+
+WA -> WA : check client version
+
+alt client ok
+    return ok, min client version
+    ws --> WC ++ : onOk, min client version
+    WC -> WC : check server version
+    alt server bad
+        WC -->x CardsJS -- : onFail('bad server version')
+    end
+else client bad
+    WA --> ws: fail, client version
+    ws --> WC ++: onFail, client version
+    WC -->x CardsJS : bad client version
+end
+
+WC -->o CardsJS -- : connected
+
+== Authentication ==
+
+User -> Page : start authentication
+Page -> CardsJS : var auth = authenticate()
+CardsJS -> CardsJS : mode = auth
+CardsJS -> WC : send({method:'AuthAsync'})
+WC -> ws : {method:'AuthAsync'}
+ws -> WA : {method:'AuthAsync'}
+WA -> CardsAPI : startAuth
+
+alt CardsAPI fails
+    CardsAPI --> WA : fail
+    WA --> ws : {method:'AuthAsync', error: 'reason'}
+    ws --> WC : {method:'AuthAsync', error: 'reason'}
+    WC --> CardsJS : onFail({method:'AuthAsync', error: 'reason'})
+end
+
+
+@enduml

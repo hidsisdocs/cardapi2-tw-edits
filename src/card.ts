@@ -1,5 +1,5 @@
-import { Base64UrlString } from "./utils"
-import { Purpose } from "./capture"
+import { Base64UrlString } from "./utils.js"
+import { Purpose } from "./capture.js"
 
 /**@public
  */

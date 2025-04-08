@@ -34,25 +34,6 @@ const { capture } = dp.card;
 NOTE: the `WebSdk` v1.0 canot be bundled! Do not attempt to bundle it, instead load it unmodified using the `<script>` tag.
 The build script copies WebSdk into the `./dist` folder (`./dist/websdk.client.ui.js`) from the `.\node_modules\@digitalpersona\websdk\dist\`.
 
-## `minibundler` - using ESM module, vanilla JS and `minibundler`
-
-This sample demostrates how to use Card API using a ESM format and a `minibundler` as a simplest bundler.
-
-The build script copies `WebSdk` module as is, and bundles Card API and main `index.js` into a single bundle.
-
-The `index.html` uses `<script>` tags to load
-
-1. the `WebSdk` module (`./dist/websdk.client.ui.js`, copied from the `.\node_modules\@digitalpersona\websdk\dist\`), then
-2. the main bundle
-
-The Card API ESM module is imported using the reguar ES6 `import`:
-
-```js
-import { capture } from "@digitalpersona/card"
-
-...
-```
-
 ## `angular` - using Typescript and ESM module, `Angular` and `Webpack`
 
 This sample demostrates how to use Card API using a ESM format, Angular component and `Webpack` as a bundler.
@@ -70,19 +51,3 @@ import { capture } from "@digitalpersona/card"
 ...
 ```
 
-## `react` - using ESM module, `React` and `esbuild`
-
-This sample demostrates how to use Card API using a ESM format, React component and a `esbuild`.
-
-The `index.html` uses `<script>` tags to load
-
-1. the `WebSdk` module (`./dist/websdk.client.ui.js`, copied from the `.\node_modules\@digitalpersona\websdk\dist\`), then
-2. the main bundle
-
-The Card API ESM module is imported using the reguar ES6 `import`:
-
-```js
-import { capture } from "@digitalpersona/card"
-
-...
-```
