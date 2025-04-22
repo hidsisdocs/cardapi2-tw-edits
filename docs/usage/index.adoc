@@ -1,4 +1,5 @@
 = Design
+:table-caption!:
 
 This document describes a design of the Card Web API.
 
