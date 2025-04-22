@@ -251,10 +251,10 @@ For more complete examples of a working code, see the link:../../samples[code sa
 == Functions
 
 '''''''''''''''''''''
-[[capture, capture()]]
+[[capture, capture]]
 ==== `capture`
 
-The `capture()` function starts a card data capture process, returning a promise
+The `capture` function starts a card data capture process, returning a promise
 that is fulfilled once the user presents a card of an eligible type, and the
 card data is successfully read.
 
@@ -303,7 +303,7 @@ async function capture(
 |===
 
 When the promise is resolved to the <<CaptureResult>> object, its <<CardType, Type>>
-property indicates the type of the card presented, and the <<Data>> property
+property indicates the type of the card presented, and the <<CardType, Data>> property
 contains a string which can be passed to the authentication server directly, as
 an opaque blob. The string is base64url-encoded JSON object containing either
 <<EnrollmentData>> or <<AuthenticationData>>, depending on the `purpose` value
@@ -313,13 +313,13 @@ with <<ApiError>> whose `message` property is set to <<ErrorMessage, `Aborted`>>
 
 === Data types
 
-This chapter describes Card API data types used or returned by the <<capture()>> funciton.
+This chapter describes Card API data types used or returned by the <<capture>> funciton.
 
 '''''''''''''''''''
 [[Purpose, Purpose]]
 ==== `Purpose`
 
-The `Purpose` value MUST be passed to the <<capture()>> function as a first parameter.
+The `Purpose` value MUST be passed to the <<capture>> function as a first parameter.
 The value defines what scenario the captured card data is about to be used and what
 data will be returned in the <<CaptureResult>>'s `Data` property.
 
@@ -351,7 +351,7 @@ The requested purpose affects what data will be returned in the `<<CaptureResult
 [[CaptureOptions, CaptureOptions]]
 ==== `CaptureOptions`
 
-The `CaptureOptions` object can be passed to the <<capture()>> function as an optional second parameter `options`.
+The `CaptureOptions` object can be passed to the <<capture>> function as an optional second parameter `options`.
 
 .Definition
 [separator=¦]
@@ -417,7 +417,7 @@ interface CaptureOptions {
 [[CardType, CardType]]
 ==== `CardType`
 
-The `CardType` value can be provided to the <<capture()>> function via its `options` parameter, to restring which type of cards should be accepted.
+The `CardType` value can be provided to the <<capture>> function via its `options` parameter, to restring which type of cards should be accepted.
 
 .Definition
 [separator=¦]
@@ -532,7 +532,7 @@ IMPORTANT: A synchronous feedback handler can throw safely,
 [[CaptureResult, CaptureResult]]
 ==== `CaptureResult`
 
-The <<capture()>> function returns a `CaptureResult` object (wrapped in a promise).
+The <<capture>> function returns a `CaptureResult` object (wrapped in a promise).
 
 .Definition
 [separator=¦]
@@ -558,7 +558,7 @@ interface CaptureResult {
 | <<Purpose>>
 | mandatory
 | A value indicating a purpose of the card data captured.
-  The `<<Purpose>>` value passed into the <<capture()>> function.
+  The `<<Purpose>>` value passed into the <<capture>> function.
 
 | cardType
 | <<CardType>>
@@ -573,7 +573,7 @@ interface CaptureResult {
 | cardData
 | <<EnrollmentData>> or <<AuthenticationData>>
 | mandatory
-| Depending on a value of the `purpose` parameter passed to the <<capture()>> function:
+| Depending on a value of the `purpose` parameter passed to the <<capture>> function:
   +
   <<EnrollmentData>> object if "enroll" was passed;
   +
@@ -587,7 +587,7 @@ interface CaptureResult {
 
 The `EnrollmentData` is an object returned as the base64url-encoded string in
 the `<<CaptureResult>>.Data` property when the `<<Purpose, "enroll">>` value was
-passed to the <<capture()>> function.
+passed to the <<capture>> function.
 
 .Definition
 [separator=¦]
@@ -663,7 +663,7 @@ a|
 
 The `AuthenticationData` is an object returned as the base64url-encoded string
 in the `<<CaptureResult>>.Data` property when the `<<Purpose, "auth">>` value was
-passed to the <<capture()>> function.
+passed to the <<capture>> function.
 
 .Definition
 [separator=¦]
