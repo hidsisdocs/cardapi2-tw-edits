@@ -1,77 +1,257 @@
-= Design notes
+= Design
 
-This document describes a preliminary design of the Card Web API v2.0.
+This document describes a design of the Card Web API.
 
 toc::[]
 
-== Design principles
-
-=== Goals
-
-. Provide a simpler streamlined API for capturing contactless card data to be used for authentication and enrollment.
-. Use newer Native Card SDK "async" flow
-. Use power of a modern JavaScript language and Web APIs to make the Card API as idiomatic as possible.
-. Fallback to older Native Card SDK for older versions (?)
-
-=== Non-goals
-
-. Do not provide event-based API, we have it in the old API
-. Do not provide support for PKI cards
-. Do not provide shims for older browsers, users must add their own shims if needed.
-. Do not provide minified version of the library, users should use bundlers allowing for dead-code removal and optimized global minification
-. Do not provide ES5 version of the library, all target browsers support at least ES2017 (ES8)
-
-=== Supported browsers
-
-. All evergreen Chrome-based browsers (Chrome, Edge, Brave, Opera etc)
-. Evergreen Mozilla Firefox
-. MS Edge Legacy -- due to Windows/Office authentication dialogs using EdgeHTML WebView (Edge 18).
-
-=== Unsupported browsers
-
-. Internet Explorer (IE)
-. Safari
-. Opera Mini
-
-Known issues with Edge Legacy::
-
-. no support for `BigInt`` -- must use polyfills (`big-integer` or `jsbi``)
-. No support for `TextEncoder`/`TextDecoder` -- needs a polyfill
-. no support for `globalThis`
-
-=== Development
-
-The library should be developed using Typescript as a main language.
-
-=== Packaging
-
-The library should be:
-
-. transpiled to JavaScript supporting `ES2016`,
-. bundled into a an ESM module and
-. published to NPM.
-
-. No minification needed; the minification should be provided by the consumer as
-a part of their bundling process.
-. No `ES5` bundle needed; if target browser does not support `<script type="module">`,
- the library consumer must do their own transpilation and bundling.
-. No CommonJS, UMD, AMD or IIFE bundling is needed.
-. No shims need to be bundled in; the library consumer should provide their
-  own shims for their target browsers.
-
-
-== Design
+== Overview
 
 The API design is largely motivated by the standard
 https://developer.mozilla.org/en-US/docs/Web/API/Fetch_API[Fetch API], which
 provides a very simple interface to retrieve data using a Promise-like type,
 and allows request cancellation via a standard
 https://developer.mozilla.org/en-US/docs/Web/API/AbortController[`AbortController`]
-class (functionally similar to `CancellationTokenSource` in C#).
+class.
+
+WARNING: The API is designed to be used in a browser environment only! It is not a NodeJS library!
+
+== Installing
+
+```
+> npm install @digitalpersona/card
+```
+
+Once the package is installed, it can be imported into your browser application.
+
+The `@digitalpersona/card` provides both legacy IIFE module and modern ESM module.
+
+The ESM module should be imported using the modern `import` statement. This is a
+preferred way for modern applications.
+
+The IIFE module is provided for legacy and/or for simple "build-less" applications,
+with no requirements for bundling and dead code elimination. The IIFE module
+must be imported using the HTML `<script>` tag. You may use a CDN like unpkg.com:
+`<script src="https://unpkg.com/@digitalpersona/card@latest/dist/index.js">`.
+
+The IIFE module adds a global `dp.card` property to the `window` object.
+When using bundlers like Rollup, Webpack, etc, the `"dp.card"` object must be
+added to the list of "globals", and the `"@digitalpersona/card"` must be added
+to the list of "external" modules, so it will not be bundled into the final
+output.
+
+IMPORTANT: The library has a peer dependecy on the `@digitalpersona/websdk` package,
+  which provides a JavaScript interface to the native API.
+  Make sure the `@digitalpersona/websdk` is also installed as a runtime dependency
+  into your project. The `@digitalpersona/websdk` is currently available only
+  as an IIFE module, so you also must import it using a `<script>` tag,
+  add `"WebSdk"` to the lsit of "globals", and add `"@digitalpersona/websdk"` to the list of "external" modules to prevent bundling.
+
+If you are using a vanilla Javascript application, you can add the following
+`script` tag to your HTML page:
+
+[separator=¦]
+|===
+a¦
+.index.html
+[source,html]
+----
+<script type="text/javascript" src="scripts/websdk/websdk.client.ui.js"></script>
+<script type="text/javascript" src="scripts/card/index.js"></script>
+<script type="text/javascript" src="index.js"></script>
+----
+
+.index.js
+[source,js]
+----
+const { capture } = dp.card;
+...
+const cardData = await capture(...);
+----
+|===
+
+
+If you are using Angular project (Typescript + bundler), you can
+import the library as follows:
+
+[separator=¦]
+|===
+a¦
+.angular.json
+[source,json]
+----
+{
+  "projects": {
+    "my-app": {
+      "architect": {
+        "build": {
+          "options": {
+            "preserveSymlinks": true,  // https://github.com/angular/angular/issues/54147
+            "index": "src/index.html",
+            "browser": "src/main.ts",
+            "scripts": ["./node_modules/@digitalpersona/websdk/dist/websdk.client.ui.js"]
+          }
+        },
+      }
+    }
+  }
+}
+----
+
+.app.component.ts
+[source,typescript]
+----
+/// <reference path="../node_modules/@digitalpersona/websdk/dts/websdk.client.d.ts" />
+
+import { capture } from '@digitalpersona/card';
+...
+const cardData = await capture(...);
+----
+|===
+
+NOTE: The `projects.my-app.architect.build.scripts` property in the `angular.json`
+is the https://angular.dev/reference/configs/workspace-config#build-target[Angular's way]
+to bundle external modules like `@digitalpersona/websdk`, as if they would be
+loaded with the `<script>` tag.
+
+NOTE: The `/// <reference path=".../websdk.client.d.ts" />` may need to be added avoid TypeScript typing errors.
+You may also need to set `"moduleResolution": "bundler"` in your `tsconfig.json`, for correct type checking of imports.
+
+
+== Usage
+
+In a typical use case, users navigate to a logon (or card enrollment) page,
+and there they are presented with a card logon/enrollment UI. The page either
+starts the card capture process automatically, or allows the user to start and
+cancel the card capture process by clicking UI elements like buttons.
+
+Below is a scenario where a logon page allows the user to initiate the card
+capture process by clicking on a btn:[Capture] button (`captureButton`)
+and stop it by clicking a btn:[Cancel] button (`cancelButton`); the card type
+is limited to Contactless Writable. When the capture is complete, a card logon/enrollment
+data is returned for further processing. During the capture process, user will
+see feedback messages, prompting to place a card on a reader or notifying about
+capture completion/errors.
+
+.Example
+[separator=¦]
+|===
+a¦
+[source,typescript]
+----
+import { Purpose, CardType, Feeedback, FeedbackMessage, ApiError, ErrorMessage, capture } from '@digitalpersona/card';
+
+...
+
+const startButton = document.getElementById('start');
+const cancelButton  = document.getElementById('cancel');
+const feedbackView = document.getElementById('feedback');
+const errorView = document.getElementById('error');
+
+// [Capture] button click handler
+startButton.onclick = async () =>
+{
+    const ac = new AbortController();               // <1>
+
+    try {
+        setCaptureActive(true, ac);                 // <2>
+        updateFeedbackView()
+        updateErrorView()
+
+        const data = await capture("auth", {        // <3>
+            cardType: "CW",
+            signal: ac.signal,
+            onFeedback: updateFeedbackView
+        });
+
+        const token = await authenticate(data);     // <4>
+    }
+    catch(e) {
+        updateErrorView(e);                         // <5>
+    }
+    finally {
+        setCaptureActive(false);                    // <6>
+        updateFeedbackView()
+    }
+};
+
+// Update state of [Capture] and [Cancel] buttons in a consistent way,
+// and attach a cancellation handler.
+function setCaptureActive(capturing: boolean, ac?: AbortController)
+{
+    startButton.disabled = capturing;               // <7>
+    cancelButton.disabled = !capturing;             // <8>
+    cancelButton.onclick = (capturing && ac) ?
+        () => ac.abort() : null                     // <9>
+}
+
+// Update a user feedback view
+function updateFeedbackView(feedback?: Feedback) {
+    feedbackView.hidden = !feedback;
+    feedbackView.innerText = translate(feedback) || '';
+}
+
+// Update an error view
+function updateErrorView(error?: ApiError) {
+    errorView.hidden = !error;
+    errorView.innerText = translate(error) || '';
+}
+
+// Translate feedbacks/errors to human-readable prompts/notifications.
+// NOTE: this example show use of the Angular's `$localize` taggged
+// template literals for API message localization; other frameworks
+// may use their own localization serices.
+function translate({
+    message?: FeedbackMessage | ErrorMessage | string,
+    code?: number
+}){
+    if (!message) return "";
+    switch(message) {
+        // feedbacks
+        case "Starting"             : return $localize`Starting...`;
+        case "Paused"               : return $localize`Paused, click on the page to resume.`;
+        case "ConnectReader"        : return $localize`Connect a card reader.`;
+        case "UseCard"              : return $localize`Tap a card.`;
+        case "UseDifferentCard"     : return $localize`Use a different card.`;
+        case "UseDifferentCardType" : return $localize`Use a card of different type.`;
+        case "UseSingleCard"        : return $localize`Use a single card.`;
+        // errors
+        case "BadVersion"           : return $localize`Incompatible client version.`;
+        case "BadConnection"        : return $localize`Connection failure.`;
+        case "BadResponse"          : return $localize`Service failure.`;
+        case "Aborted"              : return $localize`The operation was aborted.`;
+        // Show unknown platform-generated messages with codes "as-is".
+        // The message will be in a system locale, not a browser locale.
+        default:
+            return `${message || `Oops!`} Code: ${code || "N/A"}`;
+    }
+}
+----
+
+'''
+<1> prepare an `AbortController` object to be able to cancel the capture request
+    and create a handler for a btn:[Click] button
+<2> update the UI to indicate a capture process is started
+<3> start the capture flow, passing the purpose, card type, an abort signal
+    and feedback handler reference.
+<4> receive card data and use it for authentication.
+<5> handle errors.
+<6> update the UI to indicate the capture process is stopped.
+<7> disable the btn:[Capture] button when capturing to prevent second click;
+    enable otherwise.
+<8> enable the btn:[Cancel] button when capturing; disable otherwise.
+<9> attach the `AbortController` to the btn:[Cancel] when capturing
+|===
+
+For more complete examples of a working code, see the link:../../samples[code samples].
+
+
+== API
+
+== Functions
 
 '''''''''''''''''''''
 [[capture, capture()]]
-=== The `capture()` function
+==== `capture`
 
 The `capture()` function starts a card data capture process, returning a promise
 that is fulfilled once the user presents a card of an eligible type, and the
@@ -83,7 +263,7 @@ card data is successfully read.
 a¦
 [source,typescript]
 ----
-function capture(
+async function capture(
     purpose: Purpose,
     options?: CaptureOptions
 ): Promise<CaptureResult>
@@ -92,9 +272,9 @@ function capture(
 
 
 .Parameters
-[%autowidth]
+[cols="^1,^1,^1,10"]
 |===
-^| Name ^| Type ^| Specs | Description
+| Name | Type | Specs | Description
 
 | purpose
 | <<Purpose>>
@@ -183,15 +363,16 @@ interface CaptureOptions {
     readonly inactivityTimeout?: number
     readonly signal?: AbortSignal
     readonly onFeedback?: FeedbackHandler
-    readonly channelOptions?: WebSdk.WebChannelOptions
+    readonly channelOptions?: WebSdk.WebChannelOptionsData
+    readonly debug?: boolean
 }
 ----
 |===
 
 .Properties
-[%autowidth]
+[cols="^1,^1,^1,10"]
 |===
-^| Name ^| Type ^| Specs | Description
+| Name | Type | Specs | Description
 
 | cardType
 | <<CardType>>
@@ -221,9 +402,14 @@ interface CaptureOptions {
     guide the card user through the process or show feedback.
 
 | channelOptions
-| `WebChannelOptions`
+| `WebSdk.WebChannelOptionsData`
 | optional
 | A channel options object from `WebSdk` library. See WebSdk documentation.
+
+| debug
+| `boolean`
+| optional
+| Enables to output some debug information into the console.
 |===
 
 ''''''''''''''''''''''
@@ -261,6 +447,51 @@ When a card is accepted, the type of the card used will be returned in the
 <<CaptureResult>>.cardType` property. No value or null/empty value mean the
 card type is unknown.
 
+
+''''''''''''''''''''''''''''''''''''
+[[CardTech, CardTech]]
+==== `CardTech`
+
+A technology of the card presented by the user. The value is returned in the `<<CaptureResult>>.tech` property.
+
+.Definition
+[separator=¦]
+|===
+a¦
+[source,typescript]
+----
+type KnownCardTech
+    = "Proximity 125 kHz"
+    | "iClass Legacy"
+    | "MIFARE Classic"
+    | "Seos"
+    | "MIFARE DESFire"
+    | "FeliCa Sony PaSoRi"
+    | "RFIdeas"
+    | "LEGIC"
+    | "Card Serial Number (CSN)"
+
+type CardTech = KnownCardTech | string
+----
+|===
+
+.Values
+[%autowidth]
+|===
+| Name | Description
+
+| "Proximity 125 kHz"        | Proximity 125 kHz
+| "iClass Legacy"            | iClass Legacy
+| "MIFARE Classic"           | MiFare Classic
+| "Seos"                     | SEOS
+| "MIFARE DESFire"           | DesFire EV*
+| "FeliCa Sony PaSoRi"       | Felica (from not PCSC-compatible Sony PaSoRi reades), CUID
+| "RFIdeas"                  | Cards from RFIdeas readers, CUID
+| "LEGIC"                    | Cards from not PCSC-compatible Legic readers, CUID
+| "Card Serial Number (CSN)" | Card CUID from high frequency readers
+|===
+
+
 ''''''''''''''''''''''''''''''''''''
 [[FeedbackHandler, FeedbackHandler]]
 ==== `FeedbackHandler`
@@ -279,9 +510,9 @@ type FeedbackHandler = (feedback: Feedback) => void;
 |===
 
 .Parameters
-[%autowidth]
+[cols="^1,^1,^1,10"]
 |===
-^| Name ^| Type ^| Specs | Description
+| Name | Type | Specs | Description
 
 | feedback
 | <<Feedback>>
@@ -309,30 +540,43 @@ a¦
 [source,typescript]
 ----
 interface CaptureResult {
+    readonly purpose: Purpose
     readonly cardType: CardType
-    readonly cardData: Base64UrlString       // AuthenticationData or EnrollmentData, base64url-encoded
+    readonly tech?: CardTech
+    readonly cardData: EnrollmentData | AuthenticationData
 }
 ----
 |===
 
 .Properties
-[%autowidth]
+[cols="^1,^1,^1,10"]
 |===
-^| Name ^| Type ^| Specs | Description
+| Name | Type | Specs | Description
+
+| purpose
+| <<Purpose>>
+| mandatory
+| A value indicating a purpose of the card data captured.
+  The `<<Purpose>>` value passed into the <<capture()>> function.
 
 | cardType
 | <<CardType>>
 | mandatory
 | A value indicating a type of the card presented by the user.
 
+| tech
+| <<CardTech>>
+| optional
+| A string value indicating a technology of the card presented.
+
 | cardData
-| `string`
+| <<EnrollmentData>> or <<AuthenticationData>>
 | mandatory
-| A base64url-encoded <<EnrollmentData>> or <<AuthenticationData>>,
-  depending on the <<Purpose>> value passed into the <<capture()>> function.
-  The content and format of the card data can be considered opaque and be passed
-  to the server "as-is" without decoding (same as for `getCardAuthData()`
-  and `getCardEnrollData()` methods in Card API 1.0).
+| Depending on a value of the `purpose` parameter passed to the <<capture()>> function:
+  +
+  <<EnrollmentData>> object if "enroll" was passed;
+  +
+  <<AuthenticationData>> object if "auth" was passed
 
 |===
 
@@ -353,7 +597,7 @@ a¦
 interface EnrollmentData
 {
     readonly UID?: string
-    readonly tech?: string
+    readonly tech?: CardTech
     readonly address?: string
     readonly key?: string
     nickname?: string
@@ -362,9 +606,9 @@ interface EnrollmentData
 |===
 
 .Properties
-[%autowidth]
+[cols="^1,^1,^1,10"]
 |===
-^| Name ^| Type ^| Specs | Description
+| Name | Type | Specs | Description
 
 | UID
 | `string`
@@ -372,9 +616,9 @@ interface EnrollmentData
 | A base64Url-encoded card CUID for Contactless ID (read only) card.
 
 | tech
-| `string`
+| <<CardTech>>
 | optional
-| A card technology.
+| A string value indicating a technology of the card presented.
 
 | address
 | `string`
@@ -434,9 +678,9 @@ interface AuthenticationData {
 |===
 
 .Properties
-[%autowidth]
+[cols="^1,^1,^1,10"]
 |===
-^| Name ^| Type ^| Specs | Description
+| Name | Type | Specs | Description
 
 | UID
 | `string`
@@ -463,7 +707,6 @@ a|
 |===
 
 
-
 ''''''''''''''''''''''
 [[Feedback, Feedback]]
 ==== `Feedback`
@@ -487,9 +730,9 @@ interface Feedback {
 |===
 
 .Properties
-[%autowidth]
+[cols="^1,^1,^1,10"]
 |===
-^| Name ^| Type ^| Specs | Description
+| Name | Type | Specs | Description
 
 | message
 | <<FeedbackMessage>>
@@ -571,14 +814,14 @@ interface ApiError extends Error
 |===
 
 .Properties
-[%autowidth]
+[cols="^1,^1,^1,10"]
 |===
-^| Name ^| Type ^| Specs | Description
+| Name | Type | Specs | Description
 
 | name
 | `string`
 | readonly
-| A "dp.card.ApiError" event name constant, same for all ApiError instances.
+| A `"dp.card.ApiError"` event name constant, same for all `ApiError` instances.
 
 | message
 | <<ErrorMessage>> or `string`
@@ -626,127 +869,4 @@ type ErrorMessage
 | "Aborted"        | The operation was aborted by the user
 | "Timeout"        | The operation was aborted due the inactivity timeout
 |===
-
-
-== Usage
-
-In a typical use case, a user loads a logon or enrollment page and is presented
-with a UI either starting the card capture process automatically, or allowing the user
-to start and cancel the card capture process by clicking UI elements like buttons.
-
-Below is a scenario where a logon page allows the user to initiate the card
-capture process by clicking on a btn:[Capture] button (`captureButton`)
-and stop it by clicking a btn:[Cancel] button (`cancelButton`); the card type
-is limited to Contactless Writable:
-
-.Example
-[separator=¦]
-|===
-a¦
-[source,typescript]
-----
-import { Purpose, CardType, Feeedback, FeedbackMessage, ApiError, ErrorMessage, capture } from '@digitalpersona/card';
-
-...
-
-const captureButton = document.getElementById('capture');
-const cancelButton  = document.getElementById('cancel');
-const feedbackView = document.getElementById('feedback');
-const errorView = document.getElementById('error');
-
-// [Capture] button click handler
-captureButton.addEventListener('click', async () =>
-{
-    const ac = new AbortController();               // <1>
-
-    try {
-        setCaptureActive(true, ac);                 // <2>
-        updateFeedbackView()
-        updateErrorView()
-
-        const data = await capture("auth", {        // <3>
-            cardType: "CW",
-            signal: ac.signal,
-            onFeedback: updateFeedbackView
-        });
-
-        const token = await authenticate(data);     // <4>
-    }
-    catch(e) {
-        updateErrorView(e);                         // <5>
-    }
-    finally {
-        setCaptureActive(false);                    // <6>
-        updateFeedbackView()
-    }
-});
-
-// Update state of [Capture] and [Cancel] buttons in a consistent way,
-// and attach a cancellation handler.
-function setCaptureActive(capturing: boolean, ac?: AbortController)
-{
-    captureButton.disabled = capturing;             // <7>
-    cancelButton.disabled = !capturing;             // <8>
-    cancelButton.onclick = (capturing && ac) ?
-        () => ac.abort() : null                     // <9>
-}
-
-// Update a user feedback view
-function updateFeedbackView(feedback?: Feedback) {
-    feedbackView.hidden = !feedback;
-    feedbackView.innerText = translate(feedback) || '';
-}
-
-// Update an error view
-function updateErrorView(error?: ApiError) {
-    errorView.hidden = !error;
-    errorView.innerText = translate(error) || '';
-}
-
-// Translate feedbacks/errors to human-readable prompts/notifications.
-// NOTE: this example show use of the Angular's `$localize` taggged
-// template literals for API message localization; other frameworks
-// may use their own localization serices.
-function translate({
-    message?: FeedbackMessage | ErrorMessage | string,
-    code?: number
-}){
-    if (!message) return "";
-    switch(message) {
-        // feedbacks
-        case "Starting"             : return $localize`Starting...`;
-        case "Paused"               : return $localize`Paused, click on the page to resume.`;
-        case "ConnectReader"        : return $localize`Connect a card reader.`;
-        case "UseCard"              : return $localize`Tap a card.`;
-        case "UseDifferentCard"     : return $localize`Use a different card.`;
-        case "UseDifferentCardType" : return $localize`Use a card of different type.`;
-        case "UseSingleCard"        : return $localize`Use a single card.`;
-        // errors
-        case "BadVersion"           : return $localize`Incompatible client version.`;
-        case "BadConnection"        : return $localize`Connection failure.`;
-        case "BadResponse"          : return $localize`Service failure.`;
-        case "Aborted"              : return $localize`The operation was aborted.`;
-        // Show unknown platform-generated messages with codes "as-is".
-        // The message will be in a system locale, not a browser locale.
-        default:
-            return `${message || `Oops!`} Code: ${code || "N/A"}`;
-    }
-}
-----
-
-'''
-<1> prepare an `AbortController` object to be able to cancel the capture request
-    and create a handler for a btn:[Click] button
-<2> update the UI to indicate a capture process is started
-<3> start the capture flow, passing the purpose, card type, an abort signal
-    and feedback handler reference.
-<4> receive card data and use it for authentication.
-<5> handle errors.
-<6> update the UI to indicate the capture process is stopped.
-<7> disable the btn:[Capture] button when capturing to prevent second click;
-    enable otherwise.
-<8> enable the btn:[Cancel] button when capturing; disable otherwise.
-<9> attach the `AbortController` to the btn:[Cancel] when capturing
-|===
-
 

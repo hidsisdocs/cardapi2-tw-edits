@@ -4,13 +4,20 @@
     "dp.card"
   ],
   "amdName": "dp.card",
-  "version": "2.0.0",
+  "version": "2.0.1",
   "description": "HID DigitalPersona Card API Library",
   "license": "MIT",
   "author": "Andrey Bronnikov <andrey.bronnikov@hidglobal.com>",
   "contributors": [
     "HID Global Corporation"
   ],
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/hidglobal/digitalpersona-card"
+  },
+  "publishConfig": {
+    "access": "public"
+  },
   "keywords": [
     "DigitalPersona",
     "card",
@@ -20,6 +27,7 @@
   "type": "module",
   "files": [
     "dist/",
+    "docs/usage/",
     "LICENSE",
     "README.md",
     "CHANGELOG.md"
@@ -32,19 +40,14 @@
     }
   },
   "sideEffects": false,
-  "browserslist": [
+  "-browserslist": [
     "defaults and fully supports es6-module",
-    "edge >= 17"
+    "edge >= 17",
+    "not iOS > 0",
+    "not Android > 0"
   ],
   "dependencies": {
     "tslib": "^2.7.0"
-  },
-  "repository": {
-    "type": "git",
-    "url": ""
-  },
-  "publishConfig": {
-    "access": "public"
   },
   "volta": {
     "node": "20.17.0"

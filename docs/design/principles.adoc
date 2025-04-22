@@ -1,0 +1,60 @@
+= Design notes
+
+This document describes a preliminary design of the Card Web API v2.0.
+
+toc::[]
+
+== Design principles
+
+=== Goals
+
+. Provide a simpler streamlined API for capturing contactless card data to be used for authentication and enrollment.
+. Use newer Native Card SDK "async" flow
+. Use power of a modern JavaScript language and Web APIs to make the Card API as idiomatic as possible.
+. Fallback to older Native Card SDK for older versions (?)
+
+=== Non-goals
+
+. Do not provide event-based API, we have it in the old API
+. Do not provide support for PKI cards
+. Do not provide shims for older browsers, users must add their own shims if needed.
+. Do not provide minified version of the library, users should use bundlers allowing for dead-code removal and optimized global minification
+. Do not provide ES5 version of the library, all target browsers support at least ES2017 (ES8)
+
+=== Supported browsers
+
+. All evergreen Chrome-based browsers (Chrome, Edge, Brave, Opera etc)
+. Evergreen Mozilla Firefox
+. MS Edge Legacy -- due to Windows/Office authentication dialogs using EdgeHTML WebView (Edge 18).
+
+=== Unsupported browsers
+
+. Internet Explorer (IE)
+. Safari
+. Opera Mini
+
+Known issues with Edge Legacy::
+
+. no support for `BigInt`` -- must use polyfills (`big-integer` or `jsbi``)
+. No support for `TextEncoder`/`TextDecoder` -- needs a polyfill
+. no support for `globalThis`
+
+=== Development
+
+The library should be developed using Typescript as a main language.
+
+=== Packaging
+
+The library should be:
+
+. transpiled to JavaScript supporting `ES2016`,
+. bundled into a an ESM module and
+. published to NPM.
+
+. No minification needed; the minification should be provided by the consumer as
+a part of their bundling process.
+. No `ES5` bundle needed; if target browser does not support `<script type="module">`,
+ the library consumer must do their own transpilation and bundling.
+. No CommonJS, UMD, AMD or IIFE bundling is needed.
+. No shims need to be bundled in; the library consumer should provide their
+  own shims for their target browsers.

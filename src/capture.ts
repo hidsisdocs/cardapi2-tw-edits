@@ -16,7 +16,7 @@ export interface CaptureOptions {
     readonly signal?: AbortSignal                            // A capture abort signal from an `AbortController`
     readonly onFeedback?: FeedbackHandler                    // A capture feeedback handler
     readonly channelOptions?: WebSdk.WebChannelOptionsData   // TODO: or pass a prepared channel?
-    readonly debug: boolean
+    readonly debug?: boolean
 }
 
 /**@public

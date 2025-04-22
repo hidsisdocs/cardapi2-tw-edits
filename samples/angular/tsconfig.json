@@ -16,10 +16,10 @@
     "experimentalDecorators": true,
     "moduleResolution": "bundler",    // required for correct type checking of imports
     "importHelpers": true,
-    "target": "ES2022",
-    "module": "ES2022",
+    "target": "es2015",
+    "module": "es2015",
     "useDefineForClassFields": false,
-    "lib": ["ES2022", "dom"]
+    "lib": ["ES2015", "dom"]
   },
   "angularCompilerOptions": {
     "enableI18nLegacyMessageIdFormat": false,
