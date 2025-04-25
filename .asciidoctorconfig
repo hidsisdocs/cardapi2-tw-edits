@@ -3,6 +3,9 @@
 :toc: macro
 :toclevels: 5
 :reftext:
+:table-caption!:
+:table-grid: rows
+:table-separator: ¦
 
 ++++
 <style>
