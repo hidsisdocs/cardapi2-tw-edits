@@ -4,7 +4,7 @@
     "Card.WebApi"
   ],
   "amdName": "Card.WebApi",
-  "version": "1.0.0-pre1",
+  "version": "1.0.0",
   "description": "HID DigitalPersona Card API Library",
   "license": "MIT",
   "author": "Andrey Bronnikov <andrey.bronnikov@hidglobal.com>",
@@ -17,7 +17,7 @@
   },
   "publishConfig": {
     "access": "public",
-    "tag": "v1"
+    "tag": "deprecated"
   },
   "keywords": [
     "DigitalPersona",
