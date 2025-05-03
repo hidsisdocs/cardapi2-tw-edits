@@ -36,10 +36,12 @@ namespace Card {
     }
 
     export enum CardAttributes {
-        SupportsPIN = 1,
-        SupportsUID = 2,
+        SupportsPIN = 0x00000001,
+        SupportsUID = 0x00000002,
+        SupportsFastUID = 0x00000010,
         IsPKI = 0x00010000,
         IsPIV = 0x00020000,
+        IsFido = 0x00040000,
         IsReadOnly = 0x80000000
     }
 
@@ -215,7 +217,7 @@ namespace Card {
         private requests: Request[] = [];
         private handlers: { [key: string]: Handler<Event>[] } = {};
 
-        constructor(options?: WebSdk.WebChannelOptions) {
+        constructor(options?: WebSdk.WebChannelOptionsData) {
             var _instance = this;
             this.webChannel = new WebSdk.WebChannelClient("smartcards", options);
             this.webChannel.onConnectionSucceed = () => { _instance.onConnectionSucceed(); };
