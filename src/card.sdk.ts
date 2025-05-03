@@ -1,4 +1,5 @@
-﻿///<reference types="../node_modules/@digitalpersona/websdk/dts/websdk.client.d.ts" />
+﻿///<reference types="@digitalpersona/websdk" />
+
 namespace Card {
 
     export function b64UrlTo64(a: string): string {
