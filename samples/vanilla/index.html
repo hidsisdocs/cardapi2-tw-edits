@@ -1,0 +1,102 @@
+<html>
+  <head>
+    <title>Card API 1.0 Sample</title>
+
+    <link rel="stylesheet" href="./index.css">
+  </head>
+  <body>
+    <!-- Main view -->
+
+    <header>
+      <h1>Card API 1.0 Sample</h1>
+    </header>
+
+    <main>
+      <form id="captureControl" action="#">
+        <section>
+          <button id="start">Start</button>
+          <button id="stop">Stop</button>
+          <a id="cannotStart" href="#" onclick="showDialog('#howToStart')">Does not work?</a>
+        </section>
+
+        <div id="error"></div>
+
+        <section id="captureResults">
+
+          <fieldset>
+            <legend>Connected readers</legend>
+            <list id="readers"
+              item-template="#reader"
+              prompt="Connect a card reader"
+              prompt-more="Connect more readers or disconnect some"></list>
+          </fieldset>
+
+          <fieldset>
+            <legend>Captured cards</legend>
+            <list id="cards"
+              item-template="#card"
+              prompt="Present a card"
+              prompt-more="Present another card">
+            </list>
+          </fieldset>
+
+        </section>
+      </form>
+    </main>
+
+    <footer>Copyright &copy; 2025 HID Global Corporation/ASSA ABLOY AB.</footer>
+
+    <!-- Dialogs -->
+
+    <dialog id="howToStart">
+      <form method="dialog">
+        <p>Ask your administrator to install a HID DigitalPersona Client for you,
+          or download and install the <a href="https://digitalpersona.hidglobal.com/lite-client/">HID Authentication Device Client</a>.
+        </p>
+        <footer>
+          <button value="ok">Ok</button>
+        </footer>
+      </form>
+    </dialog>
+
+    <dialog id="pin">
+      <form method="dialog">
+        <label for="pin">Enter PIN:</label>
+        <input type="password" name="pin" namemaxlength="12" size="12">
+        <button class="small" value="ok">▶</button>
+        <button class="small" value="close">⨉</button>
+      </form>
+    </dialog>
+
+    <!-- List item templates -->
+
+    <template id="reader">
+      <pre name="name"></pre>
+    </template>
+
+    <template id="card">
+      <details>
+        <summary>
+          <div style="flex: 5">
+            <span name="info.Name"></span>
+            (uid:<span name="uid.hex"></span>)
+          </div>
+          <div name="time" style="flex: 1; text-align: right;"></div>
+        </summary>
+        <section>
+          <dt>Card info:</dt><dd><pre name="info"></pre></dd>
+          <dt>Enrollment data:</dt><dd><pre name="enrollData"></pre></dd>
+          <dt>Authentication data:</dt><dd><pre name="authData"></pre></dd>
+          <dt>UID:</dt><dd><pre name="uid"></pre></dd>
+          <dt>Object name:</dt><dd><pre name="objectName"></pre></dd>
+        </section>
+      </details>
+    </template>
+
+    <!-- For build-less non-production development, you can just load the SDKs from the CDN. -->
+    <script type="text/javascript" src="https://unpkg.com/@digitalpersona/websdk@v1"></script>
+    <script type="text/javascript" src="https://unpkg.com/@digitalpersona/card@v1"></script>
+
+    <script type="text/javascript" src="index.js"></script>
+  </body>
+</html>

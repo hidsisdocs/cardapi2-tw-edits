@@ -20,7 +20,7 @@ It is not a NodeJS library!
 == Installing
 
 ```shell
-> npm install @digitalpersona/card@v1
+> npm install @digitalpersona/card@v1 @digitalpersona/websdk
 ```
 
 IMPORTANT: you must use the "@v1" tag to install this version of the package.
@@ -67,7 +67,11 @@ a¦
 .index.js
 [source,js]
 ----
-class CardSigninControl {
+/// <reference types="@digitalpersona/websdk" />
+/// <reference types="@digitalpersona/card" />
+
+class CardSigninControl
+{
   constructor() {
     this.api = new Card.WebApi();
     this.api.onCardInserted = this.onCardInserted.bind(this);
@@ -131,8 +135,8 @@ a¦
 .app.component.ts
 [source,typescript]
 ----
-/// <reference path="../node_modules/@digitalpersona/websdk/dts/websdk.client.d.ts" />
-/// <reference path="../node_modules/@digitalpersona/card/dist/card.sdk.d.ts" />
+/// <reference types="@digitalpersona/websdk" />
+/// <reference types="@digitalpersona/card" />
 
 const api = new Card.WebApi();
 ...
@@ -145,7 +149,7 @@ is the https://angular.dev/reference/configs/workspace-config#build-target[Angul
 to bundle external modules like `@digitalpersona/websdk` and `@digitalpersona/card`
 as if they would be loaded with the `<script>` tag.
 
-NOTE: The `/// <reference path="..." />` need to be added avoid TypeScript
+NOTE: The `/// <reference types="..." />` need to be added avoid TypeScript
 typing errors.
 You may also need to set https://www.typescriptlang.org/tsconfig/#moduleResolution[`"moduleResolution": "bundler"`]
 in your `tsconfig.json`, to tell TypeScript to use the modern module resolution algorithm.
@@ -157,21 +161,6 @@ and there they are presented with a card logon/enrollment UI. The page either
 starts the card capture process automatically, or allows the user to start and
 cancel the card capture process by clicking UI elements like buttons.
 
-Import needed types from the `@digitalpersona/card` module, for example:
-
-[separator=¦]
-|===
-a¦
-[source,typescript]
-----
-// NOTE: make sure you import only typings here, not a code!
-// Also make sure this is not a NodeJS module. Card API is a browser-only library!
-
-import '@digitalpersona/websdk';
-import '@digitalpersona/card';
-----
-|===
-
 In your card signin controller class, create an instance of a `Card.WebApi`
 class and subscribe to its events:
 
@@ -182,12 +171,18 @@ a¦
 .cardSignin.component.ts
 [source,typescript]
 ----
+// NOTE: make sure you import only typings here, not a code!
+// Also make sure this is not a NodeJS module. Card API is a browser-only library!
+
+/// <reference types="@digitalpersona/websdk" />
+/// <reference types="@digitalpersona/card" />
+
 export class CardSignin
 {
     constructor() {
       this.api = new Card.WebApi();
       this.api.onReaderConnected = this.onReaderConnected.bind(this);
-      this.api.onDeviceDisconnected = this.onDeviceDisconnected.bind(this);
+      this.api.onReaderDisconnected = this.onReaderDisconnected.bind(this);
       this.api.onCardInserted = this.onCardInserted.bind(this);
       this.api.onCardRemoved = this.onCardRemoved.bind(this);
       this.api.onCommunicationFailed = this.onCommunicationFailed.bind(this);
@@ -196,7 +191,7 @@ export class CardSignin
 
     // Event handlers
     async onReaderConnected(event) { ... }
-    async onDeviceDisconnected(event) { ... }
+    async onReaderDisconnected(event) { ... }
     async onCardInserted(event) { ... }
     async onCardRemoved(event) { ... }
     async onCommunicationFailed(event) { ... }
@@ -311,7 +306,7 @@ class CardSignin {
 
             // for smartcards, obtain PIN from the user first
             var pin;
-            if (card.Type == CardType.Contact) {
+            if (card.Type == Card.CardType.Contact) {
                 pin = await this.promptPIN();
             }
 
@@ -319,13 +314,13 @@ class CardSignin {
             // (enrollment of authentication), read corresponding card data
             if (this.enrolling) {
                 const cardData =
-                    await this.api.getCardEnrollData(this.card.Reader, pin);
+                    await this.api.getCardEnrollData(card.Reader, pin);
                 await this.enrollCard(cardData);
                 ...
 
             } else {
                 const cardData =
-                    await this.api.getCardAuthData(this.card.Reader, pin);
+                    await this.api.getCardAuthData(card.Reader, pin);
                 this.token = await this.signin(cardData);
                 ...
             }
@@ -355,4 +350,5 @@ In addition, using the Card API, you can:
 * Enumerate all card readers in the system using the `enumerateReaders` method.
 * Enumerate cards on a specific reader using the `enumerateCards` method.
 * Read UID of a card on a specific reader using the `getCardUid` method.
-* Read an object name of a card on a specific reader using the `getCardObjectName` method.
+* Read an object name of a card on a specific reader using the `getCardObjectName` method. The object name is a base64-encoded GUID of an object stored in the user's
+record in the database (AD or LDS).
