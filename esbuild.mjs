@@ -22,7 +22,7 @@ await esbuild.build({
 await esbuild.build({
     ...baseConifg,
     format: "iife",
-    target: [ "es2015" ],
+    target: ['chrome60', 'firefox55', 'edge17'],
     minify: false,
     outfile: "dist/index.js",
 })
@@ -30,7 +30,7 @@ await esbuild.build({
 await esbuild.build({
     ...baseConifg,
     format: "iife",
-    target: [ "es2015" ],
+    target: ['chrome60', 'firefox55', 'edge17'],
     minify: true,
     outfile: `dist/index.min.js`,
 })

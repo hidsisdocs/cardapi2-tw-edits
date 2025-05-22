@@ -127,10 +127,10 @@ export function capture(
 
             const onDataReceivedTxt = (data: string) => {
                 bump()
-                const { Type, Data } = decodeAs<Message>(data)
-                switch (Type) {
+                const msg = decodeAs<Message>(data)
+                switch (msg.Type) {
                     case MessageType.Reply: {
-                        const res = decodeAs<Reply>(Data)
+                        const res = decodeAs<Reply>(msg.Data)
                         log("Got reply", res)
                         if (!res || res.Method !== MethodType.GetCardDataEx) return // silently ignore unexpected replies
                         const code = unsigned(res?.Result ?? 0) as ReplyCode
@@ -153,7 +153,7 @@ export function capture(
                     //     break
                     // }
                     case MessageType.AsyncNotification: {
-                        const res = decodeAs<NotificationEx>(Data)
+                        const res = decodeAs<NotificationEx>(msg.Data)
                         log("Got async note", res)
                         if (res) try {
                             onFeedback(res)
@@ -162,7 +162,7 @@ export function capture(
                         }
                         break
                     }
-                    default: log(`Unknown response type: ${Type}`)
+                    default: log(`Unknown response type: ${msg.Type}`)
                 }
             }
 
