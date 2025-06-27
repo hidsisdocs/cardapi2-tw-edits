@@ -1,6 +1,6 @@
 # HID DigitalPersona Card API
 
-This JavaScript library enables the use of card readers in web browsers, allowing to capture capture card enrollment or authentication data using a DigitalPersona local device access API.
+This JavaScript library enables the use of card readers in web browsers, allowing to capture card enrollment or authentication data using a DigitalPersona local device access API.
 
 ## Requirements
 
