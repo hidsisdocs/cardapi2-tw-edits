@@ -1,8 +1,24 @@
 # HID DigitalPersona Card API
 
-This JavaScript library allows to use card readers in web browsers and capture card enrollment or authentication data, using a DigitalPersona local device access API.
+This JavaScript library enables the use of card readers in web browsers, allowing to capture capture card enrollment or authentication data using a DigitalPersona local device access API.
 
-The API requires either [HID DigitalPersona Workstation](https://www.hidglobal.com/product-mix/digitalpersona) or [HID Authentication Device Client ](https://digitalpersona.hidglobal.com/lite-client/) (previously "Lite Client") to be installed on the user machine (Microsoft Windows only). This software provides communication between we browser and the native card API/drivers.
+## Requirements
+
+The Card API requires one of the following HID DigitalPersona clients to be installed on the user's machine to provide communication between the browser and the native card API/drivers:
+* [HID DigitalPersona Workstation ](https://www.hidglobal.com/product-mix/digitalpersona) - part of HID DigitalPersona Premium suite, providing multi-factor authentication, biometrics, integration with Microsoft® Active Directory, etc
+* [HID Authentication Device Client ](https://digitalpersona.hidglobal.com/lite-client/) (ADC, previously Lite Client) - a free Microsoft Windows® client providing communication with devices such as fingerprint readers and cards
+<!--- SIS: add Kiosk? --->
+
+## Target platforms and technologies
+
+Supported platforms:
+* Microsoft Windows 10 and later
+* Microsoft Windows Server 2008 R2 and later
+
+Supported browsers:
+* Google® Chrome®  and Chrome-based browsers (such as Microsoft Edge)
+* Mozilla® Firefox®
+* Microsoft Edge Legacy (WebView2)
 
 Supported card technologies:
 
@@ -11,22 +27,16 @@ Supported card technologies:
 * MiFare Classic
 * SEOS
 * DesFire EV*
-* Felica (from not PCSC-compatible Sony PaSoRi reades), CUID
+* Felica (from not PCSC-compatible Sony PaSoRi readers), CUID
 * Cards from RFIdeas readers, CUID
 * Cards from not PCSC-compatible Legic readers, CUID
 * Card CUID from high frequency readers
 
-Supported browsers:
-
-* Chrome and Chrome-based browsers (Edge etc)
-* Firefox
-* Edge Legacy (WebView2)
-
 Module formats (browser-only, no NodeJS!):
 
-* modern ESM (ESNext): `dist/index.mjs`
-* IIFE (ES2015): `dist/index[.min].js`
-* Typings (TypeScript): `dist/@types`
+* Modern ESM (ESNext) - `dist/index.mjs`
+* IIFE (ES2015) - `dist/index[.min].js`
+* Typings (TypeScript) - `dist/@types`
 
 ## Documentation
 
