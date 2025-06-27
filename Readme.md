@@ -12,10 +12,12 @@ The Card API requires one of the following HID DigitalPersona clients to be inst
 ## Target platforms and technologies
 
 Supported platforms:
+
 * Microsoft Windows 10 and later
 * Microsoft Windows Server 2008 R2 and later
 
 Supported browsers:
+
 * Google® Chrome®  and Chrome-based browsers (such as Microsoft Edge)
 * Mozilla® Firefox®
 * Microsoft Edge Legacy (WebView2)
