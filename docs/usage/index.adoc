@@ -1,7 +1,7 @@
 = Design
 :table-caption!:
 
-This document describes a design of the Card Web API.
+This document describes the design of the Card Web API.
 
 toc::[]
 
@@ -14,9 +14,9 @@ and allows request cancellation via a standard
 https://developer.mozilla.org/en-US/docs/Web/API/AbortController[`AbortController`]
 class.
 
-WARNING: The API is designed to be used in a browser environment only! It is not a NodeJS library!
+IMPORTANT: The API is designed to be used in a browser environment only! It is not a NodeJS library!
 
-== Installing
+== Installation
 
 ```
 > npm install @digitalpersona/card
@@ -24,28 +24,28 @@ WARNING: The API is designed to be used in a browser environment only! It is not
 
 Once the package is installed, it can be imported into your browser application.
 
-The `@digitalpersona/card` provides both legacy IIFE module and modern ESM module.
+The `@digitalpersona/card` provides both a legacy IIFE module and a modern ESM module.
 
 The ESM module should be imported using the modern `import` statement. This is a
 preferred way for modern applications.
 
 The IIFE module is provided for legacy and/or for simple "build-less" applications,
 with no requirements for bundling and dead code elimination. The IIFE module
-must be imported using the HTML `<script>` tag. You may use a CDN like unpkg.com:
+must be imported using the HTML `<script>` tag. You can use a CDN such as unpkg.com:
 `<script src="https://unpkg.com/@digitalpersona/card@latest/dist/index.js">`.
 
 The IIFE module adds a global `dp.card` property to the `window` object.
-When using bundlers like Rollup, Webpack, etc, the `"dp.card"` object must be
+When using bundlers such as Rollup, Webpack, etc, the `"dp.card"` object must be
 added to the list of "globals", and the `"@digitalpersona/card"` must be added
 to the list of "external" modules, so it will not be bundled into the final
 output.
 
-IMPORTANT: The library has a peer dependecy on the `@digitalpersona/websdk` package,
+IMPORTANT: The library has a peer dependency on the `@digitalpersona/websdk` package,
   which provides a JavaScript interface to the native API.
   Make sure the `@digitalpersona/websdk` is also installed as a runtime dependency
-  into your project. The `@digitalpersona/websdk` is currently available only
+  in your project. The `@digitalpersona/websdk` is currently available only
   as an IIFE module, so you also must import it using a `<script>` tag,
-  add `"WebSdk"` to the lsit of "globals", and add `"@digitalpersona/websdk"` to the list of "external" modules to prevent bundling.
+  add `"WebSdk"` to the list of "globals", and add `"@digitalpersona/websdk"` to the list of "external" modules to prevent bundling.
 
 If you are using a vanilla Javascript application, you can add the following
 `script` tag to your HTML page:
@@ -111,7 +111,7 @@ const cardData = await capture(...);
 
 NOTE: The `projects.my-app.architect.build.scripts` property in the `angular.json`
 is the https://angular.dev/reference/configs/workspace-config#build-target[Angular's way]
-to bundle external modules like `@digitalpersona/websdk`, as if they would be
+to bundle external modules such as `@digitalpersona/websdk`, as if they would be
 loaded with the `<script>` tag.
 
 NOTE: The `/// <reference path=".../websdk.client.d.ts" />` may need to be added avoid TypeScript typing errors.
@@ -120,10 +120,9 @@ You may also need to set `"moduleResolution": "bundler"` in your `tsconfig.json`
 
 == Usage
 
-In a typical use case, users navigate to a logon (or card enrollment) page,
-and there they are presented with a card logon/enrollment UI. The page either
-starts the card capture process automatically, or allows the user to start and
-cancel the card capture process by clicking UI elements like buttons.
+In a typical use case, users navigate to a logon (or card enrollment) page where they are presented with a card logon/enrollment UI. The page either
+starts the card capture process automatically or allows the user to start and
+cancel the card capture process by clicking UI elements such as buttons.
 
 Below is a scenario where a logon page allows the user to initiate the card
 capture process by clicking on a btn:[Capture] button (`captureButton`)
@@ -280,13 +279,13 @@ async function capture(
 | purpose
 | <<Purpose>>
 | mandatory
-| a <<Purpose>> value, showing what the retrieved card data will be used for.
-    This value affects what data will be retruned in the <<CaptureResult>>'s `Data` property.
+| A <<Purpose>> value, showing what the retrieved card data will be used for.
+    This value affects what data will be returned in the <<CaptureResult>>'s `Data` property.
 
 | options
 | <<CaptureOptions>>
 | optional
-| an optional <<CaptureOptions>> object containing optional settings that
+| An optional <<CaptureOptions>> object containing optional settings that
     you want to apply to the capture process, such as a desired <<CardType, card type>>,
     a user <<FeedbackHandler,feedback>> callback function, an inactivity timeout,
     an https://developer.mozilla.org/en-US/docs/Web/API/AbortSignal[`AbortSignal`]
@@ -313,7 +312,7 @@ with <<ApiError>> whose `message` property is set to <<ErrorMessage, `Aborted`>>
 
 === Data types
 
-This chapter describes Card API data types used or returned by the <<capture>> funciton.
+This chapter describes Card API data types used or returned by the <<capture>> function.
 
 '''''''''''''''''''
 [[Purpose, Purpose]]
@@ -384,8 +383,8 @@ interface CaptureOptions {
 | inactivityTimeout
 | `number`
 | optional
-| A an allowed inactivity period in seconds when no activity
-    (events or feedbacks) are received from the card engine.
+| An allowed inactivity period in seconds when no activity
+    (events or feedback) is received from the card engine.
     Default value is infinite.
     If inactivity period is expires, the capture process will be aborted with
     the `<<ErrorMessage, Timeout>>` <<ApiError>>
@@ -394,7 +393,7 @@ interface CaptureOptions {
 | `AbortSignal`
 | optional
 | A signal provided by the `AbortController.signal`.
-    The `AbortController.abort()` funciton can be user to cancel the capture operation.
+    The `AbortController.abort()` function can be used to cancel the capture operation.
 
 | onFeedback
 | <<FeedbackHandler>>
@@ -445,7 +444,7 @@ If no value or null/empty value is passed into the `<<CaptureOptions>>.cardType`
 any card type will be accepted.
 
 When a card is accepted, the type of the card used will be returned in the
-<<CaptureResult>>.cardType` property. No value or null/empty value mean the
+<<CaptureResult>>.cardType` property. No value or null/empty value means the
 card type is unknown.
 
 
@@ -486,7 +485,7 @@ type CardTech = KnownCardTech | string
 | "MIFARE Classic"           | MiFare Classic
 | "Seos"                     | SEOS
 | "MIFARE DESFire"           | DesFire EV*
-| "FeliCa Sony PaSoRi"       | Felica (from not PCSC-compatible Sony PaSoRi reades), CUID
+| "FeliCa Sony PaSoRi"       | Felica (from not PCSC-compatible Sony PaSoRi readers), CUID
 | "RFIdeas"                  | Cards from RFIdeas readers, CUID
 | "LEGIC"                    | Cards from not PCSC-compatible Legic readers, CUID
 | "Card Serial Number (CSN)" | Card CUID from high frequency readers
@@ -637,7 +636,7 @@ interface EnrollmentData
 | optional
 | A card "nickname". The property contains a card technology (same as `tech`),
   but it may be modified by a user before sending to the server
-  (this would require base64url deconding/encoding).
+  (this would require base64url decoding/encoding).
 
 |===
 
@@ -715,7 +714,7 @@ a|
 `Feedback` values are passed into a <<FeedbackHandler>> callback function
 during the capture process. Feedback values should be used to update UI
 and prompt the user to do certain actions (e.g. place a card when ready) or
-notifying about a transient states (starting, paused) when no actions are accepted.
+notify about a transient states (starting or paused) when no actions are accepted.
 
 .Definition
 [separator=¦]
@@ -745,18 +744,18 @@ interface Feedback {
 | optional
 | An additional information passed from the native platform as `HRESULT`.
   This information may be useful for logging purposes. The API does not
-  provide translation of these codes, the API user must advise the native
-  Card SDK documentation.`
+  provide translation of these codes, so the API user must refer to the native
+  Card SDK documentation.
 
 |===
 
-
 ''''''''''''''''''''''''''''''''''''
+
 [[FeedbackMessage, FeedbackMessage]]
 ==== `FeedbackMessage`
 
-The native platform may potentially return an non-standard feedback which
-cannot be translated to any of `FeedbackMessages` values. Nonstandard feedback
+The native platform may potentially return a non-standard feedback which
+cannot be translated to any of `FeedbackMessages` values. Non-standard feedback
 messages will be generated using a system locale.
 
 .Definition
@@ -781,13 +780,13 @@ type FeedbackMessage
 |===
 | Name | Description
 
-| "Starting"            | the capture process is starting
-| "Paused"              | the capture process is paused, e.g due to a lost focus
-| "ConnectReader"       | card reader is disconnected or not found
-| "UseCard"             | generic prompt to insert/tap/swipe a card
-| "UseDifferentCard"    | a card was not read or recognized
-| "UseDifferentCardType"| a card of unexpected type was used
-| "UseSingleCard"       | multiple cards were used at once
+| "Starting"            | The capture process is starting
+| "Paused"              | The capture process is paused (e.g. due to a lost focus)
+| "ConnectReader"       | Card reader is disconnected or not found
+| "UseCard"             | Generic prompt to insert/tap/swipe a card
+| "UseDifferentCard"    | A card was not read or recognized
+| "UseDifferentCardType"| A card of unexpected type was used
+| "UseSingleCard"       | Multiple cards were used at once
 |===
 
 
@@ -795,9 +794,9 @@ type FeedbackMessage
 [[ApiError, ApiError]]
 ==== `ApiError`
 
-The `ApiError` class extends a standard `Error` class with an optional numeric `code` property containing additional information passed from the native platform as `HRESULT`. This information may be useful for logging purposes. The API does not provide translation of these codes, the API user must advise the Card SDK documentation.
+The `ApiError` class extends a standard `Error` class with an optional numeric `code` property containing additional information passed from the native platform as `HRESULT`. This information may be useful for logging purposes. The API does not provide translation of these codes, so the API user must refer to the Card SDK documentation.
 
-The native platform may potentially return a non-standard error which cannot be translated to any of `ErrorMessages` values. Nonstandard error messages will be generated using a system locale.
+The native platform may potentially return a non-standard error which cannot be translated to any of `ErrorMessages` values. Non-standard error messages will be generated using a system locale.
 
 .Definition
 [separator=¦]
@@ -868,6 +867,6 @@ type ErrorMessage
 | "BadConnection"  | Connection failure
 | "BadResponse"    | Native platform failure
 | "Aborted"        | The operation was aborted by the user
-| "Timeout"        | The operation was aborted due the inactivity timeout
+| "Timeout"        | The operation was aborted due to the inactivity timeout
 |===
 
