@@ -6,10 +6,10 @@ toc::[]
 
 == Overview
 
-As a part of DigitalPersona Access Management API (DPAM), the `@digitalpersona/card` library provides a Javascript API allowing to communicate
+As a part of the DigitalPersona Access Management API (DPAM), the `@digitalpersona/card` library provides a Javascript API allowing to communicate
 with card readers from web browsers.
 
-WARNING: **This v1 API is discontinued!** For new applications, please use the latest v2 API which provides a simpler async interface instead of the
+WARNING: **This v1 API is deprecated!** For new applications, please use the latest v2 API which provides a simpler async interface instead of the
 event-based one.
 
 IMPORTANT: The API is designed to be used in a browser environment only! It is not a NodeJS library!
