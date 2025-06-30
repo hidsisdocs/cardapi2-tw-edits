@@ -6,48 +6,45 @@ toc::[]
 
 == Overview
 
-As a part of DigitalPersona Access Management API (DPAM), the
-`@digitalpersona/card` library provides Javascript API allowing to communicate
+As a part of DigitalPersona Access Management API (DPAM), the `@digitalpersona/card` library provides a Javascript API allowing to communicate
 with card readers from web browsers.
 
-WARNING: **This v1 API is discontinued!** For new applications, please use the
-latest v2 API which provides a simpler async interface instead of the
+WARNING: **This v1 API is discontinued!** For new applications, please use the latest v2 API which provides a simpler async interface instead of the
 event-based one.
 
-IMPORTANT: The API is designed to be used in a browser environment only!
-It is not a NodeJS library!
+IMPORTANT: The API is designed to be used in a browser environment only! It is not a NodeJS library!
 
-== Installing
+== Installation
 
 ```shell
 > npm install @digitalpersona/card@v1 @digitalpersona/websdk
 ```
 
-IMPORTANT: you must use the "@v1" tag to install this version of the package.
-Without the tag, a latest v2 version will be installed.
+IMPORTANT: You must use the "@v1" tag to install this version of the package.
+Without the tag, the latest v2 version will be installed.
 
 Once the package is installed, it can be imported into your browser application.
 
-The `@digitalpersona/card@v1` provides only a legacy IIFE module.
+The `@digitalpersona/card@v1` only provides a legacy IIFE module.
 No modern ESM module is provided.
 
 The IIFE module works in legacy and/or for simple "build-less" applications,
 with no requirements for bundling and dead code elimination. The IIFE module
-must be imported using the HTML `<script>` tag. You may use a CDN like unpkg.com:
+must be imported using the HTML `<script>` tag. You can use a CDN such unpkg.com:
 `<script src="https://unpkg.com/@digitalpersona/card@v1/dist/card.sdk.js">`.
 
 The IIFE module adds a global `Card.WebApi` property to the `window` object.
-When using bundlers like Rollup, Webpack, etc, the `"Card.WebApi"` object must be
+When using bundlers such as Rollup and Webpack, the `"Card.WebApi"` object must be
 added to the list of "globals", and the `"@digitalpersona/card"` must be added
 to the list of "external" modules, so it will not be bundled into the final
 output.
 
-IMPORTANT: The library has a peer dependecy on the `@digitalpersona/websdk` package,
+IMPORTANT: The library has a peer dependency on the `@digitalpersona/websdk` package,
   which provides a JavaScript interface to the native API.
   Make sure the `@digitalpersona/websdk` is also installed as a runtime dependency
-  into your project. The `@digitalpersona/websdk` is currently available only
+  in your project. The `@digitalpersona/websdk` is currently available only
   as an IIFE module, so you also must import it using a `<script>` tag,
-  and add `"WebSdk"` to the lsit of "globals", and add `"@digitalpersona/websdk"`
+  and add `"WebSdk"` to the list of "globals", and add `"@digitalpersona/websdk"`
   to the list of "external" modules to prevent bundling.
 
 If you are using a vanilla Javascript application, you can add the following
@@ -146,22 +143,21 @@ const api = new Card.WebApi();
 
 NOTE: The `projects.my-app.architect.build.scripts` property in the `angular.json`
 is the https://angular.dev/reference/configs/workspace-config#build-target[Angular's way]
-to bundle external modules like `@digitalpersona/websdk` and `@digitalpersona/card`
+to bundle external modules such as `@digitalpersona/websdk` and `@digitalpersona/card`
 as if they would be loaded with the `<script>` tag.
 
-NOTE: The `/// <reference types="..." />` need to be added avoid TypeScript
-typing errors.
+NOTE: The `/// <reference types="..." />` needs to be added avoid TypeScript typing errors.
 You may also need to set https://www.typescriptlang.org/tsconfig/#moduleResolution[`"moduleResolution": "bundler"`]
 in your `tsconfig.json`, to tell TypeScript to use the modern module resolution algorithm.
 
 == Usage
 
-In a typical use case, users navigate to a logon (or card enrollment) page,
-and there they are presented with a card logon/enrollment UI. The page either
-starts the card capture process automatically, or allows the user to start and
-cancel the card capture process by clicking UI elements like buttons.
+In a typical use case, users navigate to a logon (or card enrollment) page
+where they are presented with a card logon/enrollment UI. The page either
+starts the card capture process automatically or allows the user to start and
+cancel the card capture process by clicking UI elements such as buttons.
 
-In your card signin controller class, create an instance of a `Card.WebApi`
+In your card sign-in controller class, create an instance of a `Card.WebApi`
 class and subscribe to its events:
 
 [separator=¦]
@@ -171,7 +167,7 @@ a¦
 .cardSignin.component.ts
 [source,typescript]
 ----
-// NOTE: make sure you import only typings here, not a code!
+// NOTE: Make sure you import only typings here, not a code!
 // Also make sure this is not a NodeJS module. Card API is a browser-only library!
 
 /// <reference types="@digitalpersona/websdk" />
@@ -205,16 +201,15 @@ The Card API requires a HID DigitalPersona Agent running on a client machine.
 This agent provides a secure communication channel between a browser and a card
 device driver.
 
-The DigitalPersona Agent is native Windows application which is a part of
-HID DigitalPersona clients, like:
+The DigitalPersona Agent is a native Microsoft Windows application and is a part of
+HID DigitalPersona clients such as:
 
-* HID DigitalPersona Worksation,
-* HID DIgitalPersona Kiosk
-* HID Authentication Device Client (ADC, former Lite Client).
+* HID DigitalPersona Workstation
+* HID DigitalPersona Kiosk
+* HID Authentication Device Client (ADC, previously Lite Client)
 
-If you expect your users may not have any of HID DigitalPersona clients installed,
-provide them with a https://digitalpersona.hidglobal.com/lite-client/[link
-to the HID ADC download], appearing on a reader communication error:
+If you expect that your users may not have any of the HID DigitalPersona clients installed, provide a https://digitalpersona.hidglobal.com/lite-client/[link
+to the HID ADC download] in a reader communication error:
 
 
 [separator=¦]
@@ -250,7 +245,7 @@ class CardSignin
 |===
 
 
-To start capturing card data, start listening for card events using the `subscribe()` method; to stop listening, use the `unsibsribe()` method:
+To start capturing card data, start listening for card events using the `subscribe()` method. To stop listening, use the `unsubscribe()` method:
 
 [separator=¦]
 |===
@@ -283,10 +278,10 @@ class CardSignin {
 |===
 
 When a card is presented, first detect its type, then handle the card depending
-on a card type and intent of the capture (enrollment or authentication).
+on the card type and intent of the capture (enrollment or authentication).
 
-NOTE: Smartcards require users to enter the card PIN, whilc contactless and
-proximity cards can be used for without entering any code.
+NOTE: Smart cards require users to enter the card PIN, while contactless and
+proximity cards can be used without entering any code.
 
 [separator=¦]
 |===
@@ -349,6 +344,6 @@ In addition, using the Card API, you can:
 
 * Enumerate all card readers in the system using the `enumerateReaders` method.
 * Enumerate cards on a specific reader using the `enumerateCards` method.
-* Read UID of a card on a specific reader using the `getCardUid` method.
+* Read the UID of a card on a specific reader using the `getCardUid` method.
 * Read an object name of a card on a specific reader using the `getCardObjectName` method. The object name is a base64-encoded GUID of an object stored in the user's
 record in the database (AD or LDS).
